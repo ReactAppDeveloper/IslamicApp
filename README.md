@@ -1,2 +1,1 @@
 # Islamic App
- 

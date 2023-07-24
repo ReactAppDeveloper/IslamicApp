@@ -20,6 +20,7 @@ app.use(fileUpload({
 app.use(cors());
 app.use(express.json());
 app.use("/api/surahs", require("./routes/surah.routes"));
+app.use("/api/juzs", require("./routes/juz.routes"));
 app.use("/api/ayahs", require("./routes/ayah.routes"));
 app.use("/api/speakers", require("./routes/speaker.routes"));
 app.use("/api/videos", require("./routes/video.routes"));
