@@ -1,3 +1,1 @@
-# muslimapp-backend
-# WaqasIrfan World
-# Full Stack
+# Islamic App
