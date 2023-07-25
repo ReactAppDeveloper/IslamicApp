@@ -11,7 +11,7 @@ const getAyahs = asyncHandler(async (req, res) => {
     }).sort({ ayah__id: 1 });
     res.status(200).json(ayahs);
   } 
-  if (parseInt(req.query.juz_id)) {
+ else if (parseInt(req.query.juz_id)) {
     const ayahs = await Ayah.find({
       juz__number: parseInt(req.query.juz_id),
     }).sort({ ayah__id: 1 });
