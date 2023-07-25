@@ -65,6 +65,12 @@ const ayahSchema = mongoose.Schema(
       'ayahTranslation__translationText': {
         type: String,
       },
+      'juz__id': {
+        type: Number,
+      },
+      'juz__number': {
+        type: Number,
+      },
     },
 );
 

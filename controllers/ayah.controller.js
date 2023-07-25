@@ -9,17 +9,22 @@ const getAyahs = asyncHandler(async (req, res) => {
     const ayahs = await Ayah.find({
       surah__number: parseInt(req.query.surah_id),
     }).sort({ ayah__id: 1 });
-    // const ayahs = await Ayah.find({ page_number: ayah.page_number })
-    //   .sort({ ayah__id: 1 });
     res.status(200).json(ayahs);
-  } else if (parseInt(req.query.page_number)) {
+  } 
+  if (parseInt(req.query.juz_id)) {
+    const ayahs = await Ayah.find({
+      juz__number: parseInt(req.query.juz_id),
+    }).sort({ ayah__id: 1 });
+    res.status(200).json(ayahs);
+  }
+  else if (parseInt(req.query.page_number)) {
     const ayahs = await Ayah.find({
       page_number: parseInt(req.query.page_number),
     }).sort({ ayah__id: 1 });
     res.status(200).json(ayahs);
   } else {
     res.status(200).json({
-      message: "Please either add surah_id or page_number",
+      message: "Please either enter surah_id, juz_id or page_number",
     });
   }
 });
