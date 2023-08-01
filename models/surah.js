@@ -27,7 +27,7 @@ const surahSchema = mongoose.Schema(
         required: [true],
       },
       endAyahId: {
-        type: Number,
+        type: String,
         required: [true],
       },
       origin: {
