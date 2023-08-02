@@ -7,7 +7,15 @@ const juzSchema = mongoose.Schema(
         type: Number,
         required: [true],
       },
-      juz_name: {
+      juznamearabic: {
+        type: String,
+        required: [true],
+      },
+      juznameroman: {
+        type: String,
+        required: [true],
+      },
+      juzsequence: {
         type: String,
         required: [true],
       }
