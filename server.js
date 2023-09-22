@@ -26,8 +26,8 @@ app.use("/api/speakers", require("./routes/speaker.routes"));
 app.use("/api/videos", require("./routes/video.routes"));
 app.use("/api/categories", require("./routes/category.routes"));
 app.use("/api/greetings", require("./routes/greeting.routes"));
-app.use('/uploads', express.static('uploads'))
 app.use("/api/hadeesbooks", require("./routes/hadeesbook.routes"));
+app.use('/uploads', express.static('uploads'))
 app.use(errorHandler);
 
 app.listen(port, () => {
