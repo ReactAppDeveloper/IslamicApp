@@ -29,6 +29,8 @@ app.use("/api/greetings", require("./routes/greeting.routes"));
 app.use("/api/hadeesbooks", require("./routes/hadeesbook.routes"));
 app.use("/api/hadeesbookchapters", require("./routes/hadeesbookchapter.routes"));
 app.use("/api/hadeesbychapters", require("./routes/hadeesbychapter.routes"));
+app.use("/api/duas", require("./routes/dua.routes"));
+app.use("/api/duaverse", require("./routes/duaverse.routes"));
 app.use('/uploads', express.static('uploads'))
 app.use(errorHandler);
 
