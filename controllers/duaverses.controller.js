@@ -10,7 +10,7 @@ const getDuaverses = asyncHandler(async (req, res) => {
   if (req.query.duanameenglish) {
     const duabookverses = await Duaverse.find({
         duanameenglish: req.query.duanameenglish,
-    }).sort({ id: 1 });
+    });
     res.status(200).json(duabookverses);
   }
    else {
