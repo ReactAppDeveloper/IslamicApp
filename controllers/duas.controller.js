@@ -9,6 +9,17 @@ const getDuas= asyncHandler(async (req, res) => {
   res.status(200).json(duas);
 });
 
+const CreateDuas= asyncHandler(async (req, res) => {
+  const {duanameenglish,duacontains} = req.body;
+  const dua = await Duas.create({
+    duanameenglish,duacontains
+  });
+  res.status(200).json(dua);
+});
+
+
+
 module.exports = {
   getDuas,
+  CreateDuas,
 };
