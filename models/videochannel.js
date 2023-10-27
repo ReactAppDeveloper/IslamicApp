@@ -7,7 +7,7 @@ const videochannelSchema = mongoose.Schema(
         required: [true],
       },
       videochannelimage: {
-        type: Number,
+        type: String,
         required: [true],
       },
     },
