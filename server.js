@@ -24,6 +24,7 @@ app.use("/api/juzs", require("./routes/juz.routes"));
 app.use("/api/ayahs", require("./routes/ayah.routes"));
 app.use("/api/speakers", require("./routes/speaker.routes"));
 app.use("/api/videos", require("./routes/video.routes"));
+app.use("/api/videobychannel", require("./routes/videobychannel.routes"));
 app.use("/api/categories", require("./routes/category.routes"));
 app.use("/api/greetings", require("./routes/greeting.routes"));
 app.use("/api/hadeesbooks", require("./routes/hadeesbook.routes"));

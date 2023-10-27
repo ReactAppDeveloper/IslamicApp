@@ -14,6 +14,10 @@ const videoSchema = mongoose.Schema(
         type: String,
         required: [true, "Video Title is required"],
       },
+      videochannelname: {
+        type: String,
+        required: [true],
+      },
       summary: {
         type: String,
         default: ""
@@ -29,4 +33,4 @@ const videoSchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model("videos", videoSchema, "videos");
+module.exports = mongoose.model("videos", videoSchema);

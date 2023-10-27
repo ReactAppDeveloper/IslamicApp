@@ -61,8 +61,24 @@ const getVideo = asyncHandler(async (req, res) => {
   res.status(200).json(video);
 });
 
+const getChannel = asyncHandler(async (req, res) => {
+ 
+  if (req.query.videochannelname) {
+    const video = await Video.find({
+      videochannelname: req.query.videochannelname,
+    });
+    res.status(200).json(video);
+  }
+   else {
+    res.status(200).json({
+      message: "Please Enter Video Channel Name",
+    });
+  }
+});
+
 module.exports = {
   getVideos,
   createVideo,
-  getVideo
+  getVideo,
+  getChannel,
 };
