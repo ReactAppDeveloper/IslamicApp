@@ -10,7 +10,7 @@ const getDuas= asyncHandler(async (req, res) => {
 });
 
 const CreateDuas= asyncHandler(async (req, res) => {
-  const {duanameenglish,duacontains} = req.query;
+  const {duanameenglish,duacontains} = req.body;
   const dua = await Duas.create({
     duanameenglish,duacontains
   });
