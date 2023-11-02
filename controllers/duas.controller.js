@@ -11,8 +11,7 @@ const getDuas= asyncHandler(async (req, res) => {
 });
 
 const getindDuas = asyncHandler(async (req, res) => {
-    const {_id}  = req.body;
-  const dua = await Duas.find({ _id })
+  const dua = await Duas.find(new mongoose.Types.ObjectId(req.params.id))
   res.status(200).json(dua);
 });
 
