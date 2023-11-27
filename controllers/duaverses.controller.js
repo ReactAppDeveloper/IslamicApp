@@ -19,7 +19,35 @@ const getDuaverses = asyncHandler(async (req, res) => {
     });
   }
 });
+const CreateDuasVerses= asyncHandler(async (req, res) => {
+  const {duanameenglish,duafor,duainarabic,duatranslation,duatransliteration,duareferrence} = req.body;
+  const dua = await Duaverse.create({
+    duanameenglish,duafor,duainarabic,duatranslation,duatransliteration,duareferrence
+  });
+  res.status(200).json(dua);
+});
+const UpdateDuasVerses = asyncHandler(async (req, res) => {
+  const duaverses = {_id: req.params.id};
+  Duaverse.updateOne(duaverses,req.body)
+  .then(duaverseid=>{
+    if(!duaverseid){return res.status(404).end();}
+    return res.status(200).json(duaverseid)
+  })
+});
+const DeleteDuasverse = asyncHandler(async (req, res) => {
+  Duaverse.findByIdAndRemove(req.params.id)
+  .exec()
+  .then(duaverse=>{
+   if(!duaverse){return res.status(404).end();}
+   return  res.status(200).json({
+     message: "Dua Deleted Successfully",
+   });
+  })
+ });
 
 module.exports = {
   getDuaverses,
+  CreateDuasVerses,
+  UpdateDuasVerses,
+  DeleteDuasverse
 };
