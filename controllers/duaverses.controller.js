@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const mongoose = require("mongoose");
 const Duaverse = require("../models/duaverse");
 
 
@@ -18,6 +19,10 @@ const getDuaverses = asyncHandler(async (req, res) => {
       message: "Please Enter Dua Name",
     });
   }
+});
+const getindDuasVerses = asyncHandler(async (req, res) => {
+  const duaverse = await Duaverse.find(new mongoose.Types.ObjectId(req.params.id))
+  res.status(200).json(duaverse);
 });
 const CreateDuasVerses= asyncHandler(async (req, res) => {
   const {duanameenglish,duafor,duainarabic,duatranslation,duatransliteration,duareferrence} = req.body;
@@ -49,5 +54,6 @@ module.exports = {
   getDuaverses,
   CreateDuasVerses,
   UpdateDuasVerses,
-  DeleteDuasverse
+  DeleteDuasverse,
+  getindDuasVerses
 };
