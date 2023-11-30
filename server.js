@@ -36,6 +36,7 @@ app.use("/api/duaverse", require("./routes/duaverse.routes"));
 app.use("/api/duasversebyid", require("./routes/duaversebyid.routes"));
 app.use("/api/videochannels", require("./routes/videochannel.routes"));
 app.use("/api/tasbihs", require("./routes/tasbih.routes"));
+app.use("/api/tasbihbyid", require("./routes/tasbihbyid.routes"));
 app.use('/uploads', express.static('uploads'))
 app.use(errorHandler);
 
