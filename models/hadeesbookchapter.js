@@ -27,6 +27,7 @@ const hadeeesbookchapterSchema = mongoose.Schema(
         required: [true],
       }
     },
+    
 );
 
 module.exports = mongoose.model("hadeesbookchapters", hadeeesbookchapterSchema);

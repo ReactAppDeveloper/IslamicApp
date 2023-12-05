@@ -9,8 +9,14 @@ const duasSchema = mongoose.Schema(
       duacontains: {
         type: String,
         required: [true],
+      },
+      duaID:{
+        type:String
       }
     },
+    {
+      timestamps: true,
+    }
 );
 
 module.exports = mongoose.model("duas", duasSchema);
