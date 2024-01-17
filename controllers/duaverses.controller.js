@@ -6,6 +6,11 @@ const Duaverse = require("../models/duaverse");
 //@desc Get all chapters by book name and chapter id
 //@route GET /api/hadiths?book=sahih-bukhair&chapter=1
 //@access private
+const getAllDuasVerses= asyncHandler(async (req, res) => {
+  const allduasverses = await Duaverse.find()
+    .sort({ id: 1 });
+  res.status(200).json(allduasverses);
+});
 const getDuaverses = asyncHandler(async (req, res) => {
  
   if (req.query.duanameenglish) {
@@ -51,6 +56,7 @@ const DeleteDuasverse = asyncHandler(async (req, res) => {
  });
 
 module.exports = {
+  getAllDuasVerses,
   getDuaverses,
   CreateDuasVerses,
   UpdateDuasVerses,

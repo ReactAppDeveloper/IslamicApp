@@ -32,6 +32,7 @@ app.use("/api/hadeesbookchapters", require("./routes/hadeesbookchapter.routes"))
 app.use("/api/hadeesbychapters", require("./routes/hadeesbychapter.routes"));
 app.use("/api/duas", require("./routes/dua.routes"));
 app.use("/api/duasbyid", require("./routes/duabyid.routes"));
+app.use("/api/allduaverse", require("./routes/duaverse.routes"));
 app.use("/api/duaverse", require("./routes/duaverse.routes"));
 app.use("/api/duasversebyid", require("./routes/duaversebyid.routes"));
 app.use("/api/videochannels", require("./routes/videochannel.routes"));
