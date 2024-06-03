@@ -30,9 +30,9 @@ const getindDuasVerses = asyncHandler(async (req, res) => {
   res.status(200).json(duaverse);
 });
 const CreateDuasVerses= asyncHandler(async (req, res) => {
-  const {duanameenglish,duafor,duainarabic,duatranslation,duatransliteration,duareferrence} = req.body;
+  const {duanameenglish,duafor,duainarabic,duatranslation,duatransliteration,duareferrence,duapurpose} = req.body;
   const dua = await Duaverse.create({
-    duanameenglish,duafor,duainarabic,duatranslation,duatransliteration,duareferrence
+    duanameenglish,duafor,duainarabic,duatranslation,duatransliteration,duareferrence,duapurpose
   });
   res.status(200).json(dua);
 });
