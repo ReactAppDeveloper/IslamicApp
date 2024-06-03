@@ -26,6 +26,10 @@ const duaversesSchema = mongoose.Schema(
       duareferrence: {
         type: String,
         required: [true],
+      },
+      duapurpose: {
+        type: String,
+        required: [true],
       }
     },
     {
