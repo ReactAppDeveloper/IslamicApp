@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
-const Tasbhiverse = require("../models/tasbihs");
+const Tasbhiverse = require("../models/tasbihverse");
 
 //@access private
 const getAllTasbihsVerses= asyncHandler(async (req, res) => {
