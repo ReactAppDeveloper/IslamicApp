@@ -470,7 +470,7 @@ const SurahFullView = ({navigation, route}) => {
       />
 
       <ImageBackground
-        source={IMAGES.backGroundImgOne}
+        source={IMAGES.backGroundImg}
         resizeMode="cover"
         style={styles.backgroundImageStyle}>
         {showLoader ? (
@@ -521,87 +521,95 @@ const SurahFullView = ({navigation, route}) => {
                 style={{marginBottom: 5}}
                 ref={ayahRefs}
                 onLayout={handleLayout}>
-                <Text style={{flex: 1}}>
-                  {verseDetailList?.map(item => (
-                    <Text style={styles.detailTextView}>
-                      <Text
-                        style={{
-                          ...FONTSTYLE(
-                            Platform.OS === 'android'
-                              ? isArabicFont?.key
-                              : FONTS[isArabicFont?.key],
-                            arabicFontSize,
-                          ).arabicText,
-                          lineHeight:
-                            Platform.OS === 'android'
-                              ? arabicFontSize * 1.9
-                              : 0,
-                          color:
-                            currentPlayingAyah?.verseKey == item?.verseKey
-                              ? COLORS.yellow
-                              : COLORS.primaryGray,
-                        }}>
-                        {item?.text}
-                      </Text>
-                      <Text style={{flex: 1, width: '100%'}}>
-                        <View
-                          style={{
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                          }}>
-                          <Image
-                            source={IMAGES.numberBackIcon}
-                            resizeMode="contain"
-                            style={[
-                              styles.numberBackStyle,
-                              {
-                                height:
-                                  arabicFontSize *
-                                  (item?.id > 1000
-                                    ? 0.9
-                                    : item?.id > 100
-                                    ? 0.85
-                                    : 0.8),
-
-                                width:
-                                  arabicFontSize *
-                                  (item?.id > 1000
-                                    ? 1
-                                    : item?.id > 100
-                                    ? 0.97
-                                    : 0.9),
-                              },
-                            ]}
-                          />
+                <Text style={{flex: 1}} key={currentAyahIndex}>
+                  {verseDetailList?.map((item, index) => {
+                    return (
+                      <>
+                        <Text
+                          style={styles.detailTextView}
+                          key={index.toString()}>
                           <Text
-                            style={[
-                              {
-                                ...FONTSTYLE(
-                                  FONTS.trochutBold,
-                                  arabicFontSize *
-                                    (item?.id < 100
-                                      ? 0.5
-                                      : item?.id < 1000
-                                      ? 0.4
-                                      : 0.3),
-                                ).arabicText,
-                                color:
-                                  currentPlayingAyah?.verseKey == item?.verseKey
-                                    ? COLORS.yellow
-                                    : COLORS.primaryGray,
-                                position: 'absolute',
-                              },
-                            ]}
-                            onLayout={event => {
-                              setIndexLayout(event?.nativeEvent?.layout);
+                            style={{
+                              ...FONTSTYLE(
+                                Platform.OS === 'android'
+                                  ? isArabicFont?.key
+                                  : FONTS[isArabicFont?.key],
+                                arabicFontSize,
+                              ).arabicText,
+                              lineHeight:
+                                Platform.OS === 'android'
+                                  ? arabicFontSize * 1.9
+                                  : 0,
+                              color:
+                                currentPlayingAyah?.verseKey == item?.verseKey
+                                  ? COLORS.yellow
+                                  : COLORS.primaryGray,
                             }}>
-                            {/* {`${item?.verseKey.split(':')[1]} `} */}
-                            {` ${item?.id} `}
+                            {item?.textUthmani}
                           </Text>
-                        </View>
-                      </Text>
-                    </Text>
-                  ))}
+                          <Text style={{flex: 1, width: '100%'}}>
+                            <View
+                              style={{
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}>
+                              <Image
+                                source={IMAGES.numberBackIcon}
+                                resizeMode="contain"
+                                style={[
+                                  styles.numberBackStyle,
+                                  {
+                                    height:
+                                      arabicFontSize *
+                                      (item?.id > 1000
+                                        ? 0.9
+                                        : item?.id > 100
+                                        ? 0.85
+                                        : 0.8),
+
+                                    width:
+                                      arabicFontSize *
+                                      (item?.id > 1000
+                                        ? 1
+                                        : item?.id > 100
+                                        ? 0.97
+                                        : 0.9),
+                                  },
+                                ]}
+                              />
+                              <Text
+                                style={[
+                                  {
+                                    ...FONTSTYLE(
+                                      FONTS.trochutBold,
+                                      arabicFontSize *
+                                        (item?.id < 100
+                                          ? 0.5
+                                          : item?.id < 1000
+                                          ? 0.4
+                                          : 0.3),
+                                    ).arabicText,
+                                    color:
+                                      currentPlayingAyah?.verseKey ==
+                                      item?.verseKey
+                                        ? COLORS.yellow
+                                        : COLORS.primaryGray,
+                                    position: 'absolute',
+                                  },
+                                ]}
+                                onLayout={event => {
+                                  setIndexLayout(event?.nativeEvent?.layout);
+                                }}>
+                                {/* {`${item?.verseKey.split(':')[1]} `} */}
+                                {` ${item?.id} `}
+                              </Text>
+                            </View>
+                          </Text>
+                        </Text>
+                        ,
+                      </>
+                    );
+                  })}
                 </Text>
               </View>
             </ScrollView>
