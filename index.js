@@ -454,9 +454,10 @@ const SurahDetailPage = ({navigation, route}) => {
     onClickReturnSearch();
   };
 
-  const clickOnReciter = item => {
-    setReciteModalVisible(false);
+  const clickOnReciter = async item => {
+    await TrackPlayer.stop();
     getAudioUrlData(item?.reciterId, true);
+    setReciteModalVisible(false);
   };
   const onCloseReciter = () => {
     setReciteModalVisible(false);
@@ -766,11 +767,22 @@ const SurahDetailPage = ({navigation, route}) => {
       }
       if (audioData?.audioFiles?.length != 0) {
         const updatedRecitationsData = audioData?.audioFiles?.map(
-          (item, index) => ({
-            ...item,
-            id: index + 1,
-            url: `https://verses.quran.com/${item?.url}`,
-          }),
+          (item, index) => {
+            let url = item?.url;
+            const isUrlContainsDotCom = url.includes('.com');
+            if (isUrlContainsDotCom) {
+              if (url.startsWith('//')) {
+                url = `https:${url}`;
+              }
+            } else {
+              url = `https://verses.quran.com/${url}`;
+            }
+            return {
+              ...item,
+              id: index + 1,
+              url: url,
+            };
+          },
         );
         setAudioList(updatedRecitationsData);
         // dispatch(setChapterAudioList(updatedRecitationsData));
@@ -1166,7 +1178,7 @@ const SurahDetailPage = ({navigation, route}) => {
           ) : (
             <View style={{flex: 1}}>
               <ImageBackground
-                source={IMAGES.backGroundImgOne}
+                source={IMAGES.backGroundImg}
                 resizeMode="cover"
                 style={styles.backgroundImageStyle}>
                 <View
@@ -1204,7 +1216,7 @@ const SurahDetailPage = ({navigation, route}) => {
                         },
                         styles.ayahTitleText,
                       ]}>
-                      سورة {ar[surahDetail?.id]?.transliteratedName}
+                      {ar[surahDetail?.id]?.transliteratedName}
                     </Text>
                     <View style={styles.subTextView}>
                       <Text key={currentAyahIndex}>
