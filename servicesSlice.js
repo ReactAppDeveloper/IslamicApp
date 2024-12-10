@@ -14,9 +14,9 @@ const initialState = {
   arabicFontSize: 24,
   translationFontSize: 12,
   isArabicFont: {
-    id: 1,
-    key: 'arabic_Al_Qalam',
-    fontTitle: 'Al Qalam Quran Majeed',
+    id: 12,
+    key: 'arabic_noorehuda_Regular',
+    fontTitle: 'Noorehuda',
   },
   translationList: 131,
   transliterationList: 131,
@@ -29,6 +29,7 @@ const initialState = {
   },
   tafseerLanguage: {_index: 0, id: 1, name: 'English', language: 'english'},
   tafseerAuthor: [],
+  isTrackEnded: false,
 };
 
 const servicesSlice = createSlice({
@@ -94,6 +95,9 @@ const servicesSlice = createSlice({
     setTafseerAuthor: (state, action) => {
       state.tafseerAuthor = action.payload;
     },
+    setTrackEnded: (state, action) => {
+      state.isTrackEnded = action.payload;
+    },
   },
 });
 
@@ -117,6 +121,7 @@ export const {
   setArabicFont,
   setTafseerLanguage,
   setTafseerAuthor,
+  setTrackEnded,
 } = servicesSlice.actions;
 
 export default servicesSlice.reducer;
