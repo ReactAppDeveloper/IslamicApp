@@ -2,12 +2,33 @@ import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import {FlashList} from '@shopify/flash-list';
 import {isEmpty} from 'lodash';
 import React, {useEffect, useRef, useState} from 'react';
-import {ActivityIndicator,Alert,AppState,BackHandler,Dimensions,Image,ImageBackground,TouchableOpacity,InteractionManager,Platform,ScrollView,Text,View,Button} from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  AppState,
+  BackHandler,
+  Dimensions,
+  Image,
+  ImageBackground,
+  InteractionManager,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import Share from 'react-native-share';
 import {ScaledSheet, verticalScale} from 'react-native-size-matters';
-import TrackPlayer, {useProgress,usePlaybackState} from 'react-native-track-player';
+import TrackPlayer, {useProgress} from 'react-native-track-player';
 import {useDispatch, useSelector} from 'react-redux';
-import {getAudioUrlByChapter,getAudioUrlByJuz,getChapterIdBySlug,getChapterVerses,getJuzVerses,getPagesLookup,getRangeVerses,} from '../../api';
+import {
+  getAudioUrlByChapter,
+  getAudioUrlByJuz,
+  getChapterIdBySlug,
+  getChapterVerses,
+  getJuzVerses,
+  getPagesLookup,
+  getRangeVerses,
+} from '../../api';
 import AyahViewComponent from '../../components/AyahViewComponent';
 import BottomView from '../../components/BottomView';
 import EmptyView from '../../components/EmptyView';
@@ -21,23 +42,46 @@ import ar from '../../data/chapters/ar.json';
 import localeLanguage from '../../helper/localLanguage';
 import {getStorageItem, setStorageItem} from '../../mmkvStorage/storeData';
 import {getQuranReaderStylesInitialState} from '../../redux/defaultSettings/util';
-import {setSpeedCounting,setVerseList,} from '../../redux/reduxToolkit/store/servicesSlice';
+import {
+  setSpeedCounting,
+  setTrackEnded,
+  setVerseList,
+} from '../../redux/reduxToolkit/store/servicesSlice';
 import {COLORS, FONTS, FONTSTYLE, IMAGES} from '../../theme';
 import {SIZES} from '../../theme/Sizes';
 import {QuranReaderDataType} from '../../types/QuranReader';
 import {getDefaultWordFields, getMushafId} from '../../utils/api';
 import {getAllChaptersData, getChapterData} from '../../utils/chapter';
 import {formatStringNumber} from '../../utils/number';
-import { ONE_WEEK_REVALIDATION_PERIOD_SECONDS,REVALIDATION_PERIOD_ON_ERROR_SECONDS,} from '../../utils/staticPageGeneration';
-import {isRangesStringValid,isValidChapterId,isValidJuzId,isValidVerseKey,} from '../../utils/validator';
+import {
+  ONE_WEEK_REVALIDATION_PERIOD_SECONDS,
+  REVALIDATION_PERIOD_ON_ERROR_SECONDS,
+} from '../../utils/staticPageGeneration';
+import {
+  isRangesStringValid,
+  isValidChapterId,
+  isValidJuzId,
+  isValidVerseKey,
+} from '../../utils/validator';
 import {getVerseAndChapterNumbersFromKey} from '../../utils/verse';
-import {generateVerseKeysBetweenTwoVerseKeys,parseVerseRange,} from '../../utils/verseKeys';
+import {
+  generateVerseKeysBetweenTwoVerseKeys,
+  parseVerseRange,
+} from '../../utils/verseKeys';
 
 const SurahDetailPage = ({navigation, route}) => {
-  const {ayahIdFromBookmark,selectedAyahItems,selectedSurahItems,fromPinAyah,fromBookmarkAyah,fromjuz,} = route.params;
+  const {
+    ayahIdFromBookmark,
+    selectedAyahItems,
+    selectedSurahItems,
+    fromPinAyah,
+    fromBookmarkAyah,
+    fromjuz,
+  } = route.params;
   const reciters = getStorageItem('reciters');
   const saveCurrentAyah = getStorageItem('saveCurrentAyah');
   const bookmarksList = getStorageItem('bookmark');
+  const isTrackEnded = useSelector(state => state.services.isTrackEnded);
   const arabicFontSize = useSelector(state => state.services.arabicFontSize);
   const isArabicFont = useSelector(state => state.services.isArabicFont);
   const translationList = useSelector(state => state.services.translationList);
@@ -46,7 +90,9 @@ const SurahDetailPage = ({navigation, route}) => {
   const recitersList = useSelector(state => state.reciters.recitersDetaList);
   const [showLoader, setShowLoader] = useState(true);
   const [surahDetail, setSurahDetail] = useState(selectedSurahItems);
-  const [verseDetailList, setVerseDetailList] = useState(verseList?.verses || [],);
+  const [verseDetailList, setVerseDetailList] = useState(
+    verseList?.verses || [],
+  );
   const [isPinAyahItem, setIsPinAyahItem] = useState('');
   const [isGetPinAyah, setIsGetPinAyah] = useState('');
   const [isBookmark, setBookmark] = useState([]);
@@ -74,16 +120,7 @@ const SurahDetailPage = ({navigation, route}) => {
   const isFocused = useIsFocused();
   const {height: HEIGHT} = Dimensions.get('window');
   const [layout, setLayout] = useState(null);
-  const [additionalTexts, setAdditionalTexts] = useState({});
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-
-  const surahLookup = {
-    "1": { transliteratedName: "Al-Fatihah", translatedName: "The Opening", revelationPlace: "Makkah", versesCount: 7 },
-    "2": { transliteratedName: "Al-Baqarah", translatedName: "The Cow", revelationPlace: "Madinah", versesCount: 286 },
-    "3": { transliteratedName: "Aal-E-Imran", translatedName: "The Family of Imran", revelationPlace: "Madinah", versesCount: 200 },
-    // Add more Surahs here as needed
-  };
-  const getSurahDetail = (surahId) => surahLookup[surahId] || { transliteratedName: `Surah ${surahId}`, translatedName: "Unknown", revelationPlace: "Unknown", versesCount: 0 };
+  const eventListenerAdded = useRef(false);
 
   useEffect(() => {
     const handleAppStateChange = currentState => {
@@ -116,7 +153,6 @@ const SurahDetailPage = ({navigation, route}) => {
       setShowLoader(true);
     }, []),
   );
-
   useEffect(() => {
     const backAction = async () => {
       if (fromBookmarkAyah) {
@@ -334,7 +370,6 @@ const SurahDetailPage = ({navigation, route}) => {
       };
     }
   };
-
   const getJuzVerse = async ({id, locale}) => {
     let juzId = String(id);
 
@@ -369,7 +404,6 @@ const SurahDetailPage = ({navigation, route}) => {
         ),
         mushaf: defaultMushafId,
         perPage: 1000,
-        translations: translationList,
         // from: firstPageOfJuzLookup.from,
         // to: firstPageOfJuzLookup.to,
       });
@@ -404,7 +438,6 @@ const SurahDetailPage = ({navigation, route}) => {
   const getBookmarkList = () => {
     setBookmark(bookmarksList);
   };
-
   const getPinAyahItem = () => {
     const pinAyah = getStorageItem('pin');
     setIsGetPinAyah(pinAyah);
@@ -424,11 +457,13 @@ const SurahDetailPage = ({navigation, route}) => {
     onClickReturnSearch();
   };
 
-  const clickOnReciter = item => {
+  const clickOnReciter = async item => {
+    await TrackPlayer.stop();
+    dispatch(setTrackEnded(false));
+    eventListenerAdded.current = false;
+    getAudioUrlData(item?.reciterId, true);
     setReciteModalVisible(false);
-    getAudioUrlData(item?.reciter_id, true);
   };
-  
   const onCloseReciter = () => {
     setReciteModalVisible(false);
   };
@@ -484,6 +519,8 @@ const SurahDetailPage = ({navigation, route}) => {
         console.error('error---->', error);
       }
     } else {
+      dispatch(setTrackEnded(false));
+      eventListenerAdded.current = false;
       console.log('====No next track available====');
     }
     handleStopAutoScrolling();
@@ -501,7 +538,6 @@ const SurahDetailPage = ({navigation, route}) => {
     onClickReturnSearch();
     setCurrentOffset(0);
   };
-
   const onClickSearchIcon = () => {
     TrackPlayer.pause();
     setIsPlaying(false);
@@ -509,13 +545,11 @@ const SurahDetailPage = ({navigation, route}) => {
     setSearchModalVisible(true);
     setVerseDetailList(verseList?.verses);
   };
-
   const onClickReturnSearch = () => {
     setSearchText('');
     setSearchModalVisible(false);
     setVerseDetailList(verseList?.verses);
   };
-
   const onClickSearchQuran = () => {
     setSearchModalVisible(false);
   };
@@ -542,31 +576,13 @@ const SurahDetailPage = ({navigation, route}) => {
     setPinModalVisible(false);
     setIsPinAyahItem('');
   };
-
   const onClickConfirm = () => {
-    const formatter = new Intl.DateTimeFormat('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: true,
-  });
-  const currentDateTime = formatter.format(new Date());
-    
-    if (isPinAyahItem?.id === isGetPinAyah?.AyahItem?.id) {
+    if (isPinAyahItem?.id == isGetPinAyah?.AyahItem?.id) {
       const pinItem = {};
+
       setStorageItem('pin', pinItem);
       setPinModalVisible(false);
       setIsGetPinAyah(pinItem);
-
-      setAdditionalTexts(prev => {
-        const newTexts = { ...prev };
-        delete newTexts[isPinAyahItem.id];
-        saveAdditionalTextsToStorage(newTexts);
-        return newTexts;
-      });
-
       setTimeout(() => {
         setShowPinMessage(true);
       }, 500);
@@ -574,23 +590,11 @@ const SurahDetailPage = ({navigation, route}) => {
         setShowPinMessage(false);
       }, 3000);
     } else {
-      const pinItem = {
-        SurahItem: surahDetail,
-        AyahItem: isPinAyahItem,
-        pinnedAt: currentDateTime,
-      };
+      const pinItem = {SurahItem: surahDetail, AyahItem: isPinAyahItem};
 
       setStorageItem('pin', pinItem);
       setPinModalVisible(false);
       setIsGetPinAyah(pinItem);
-
-      setAdditionalTexts(prev => {
-        const newTexts = {};
-        newTexts[isPinAyahItem.id] = currentDateTime;
-        saveAdditionalTextsToStorage(newTexts); 
-        return newTexts;
-      });
-
       setTimeout(() => {
         setShowPinMessage(true);
       }, 500);
@@ -599,22 +603,6 @@ const SurahDetailPage = ({navigation, route}) => {
       }, 3000);
     }
   };
-
-const saveAdditionalTextsToStorage = async (texts) => {
-    setStorageItem('additionalTexts', texts);
-};
-
-useEffect(() => {
-  const loadAdditionalTexts = async () => {
-      const savedTexts = await getStorageItem('additionalTexts');
-      if (savedTexts) {
-          setAdditionalTexts(savedTexts);
-      }
-  };
-
-  loadAdditionalTexts();
-}, []);
-
   const toggleBookmark = item => {
     const Bookmark = {BookmarkSurahItem: surahDetail, BookmarkAyahItem: item};
     const isAlreadyBookmarked = isBookmark?.some(
@@ -632,7 +620,6 @@ useEffect(() => {
     setBookmark(updatedBookmark);
     setStorageItem('bookmark', updatedBookmark);
   };
-
   const bookmarked = item => {
     return isBookmark.some(val => {
       return val?.BookmarkAyahItem?.id === item?.id;
@@ -725,7 +712,6 @@ useEffect(() => {
       ayahIdFromBookmark: saveCurrentAyah?.AyahItem?.id,
     });
   };
-
   const onClickNo = () => {
     setLastPlayAyahVisible(false);
     setStorageItem('saveCurrentAyah', []);
@@ -736,234 +722,155 @@ useEffect(() => {
     }
   };
 
-  // ====== Audio Play =======
+  // // ====== Audio Play =======
   useEffect(() => {
-    TrackPlayer.addEventListener('playback-queue-ended', async () => {
-      console.log('Track ended', surahDetail?.id);
-      setCurrentPlayingAyah({});
-      setCurrentAyahIndex(null);
-      getAudioUrlData(reciters?.reciter_id, false);
-      setIsPlaying(false);
-    });
-    const unsubscribe = navigation.addListener('blur', async () => {
-      await TrackPlayer.stop();
-      setIsPlaying(false);
-    });
-    return async () => {
-      await TrackPlayer.reset();
-      stopAudioPlay();
-      handleStopAutoScrolling();
-      dispatch(setSpeedCounting(1));
-      unsubscribe();
-    };
+    if (!eventListenerAdded.current) {
+      eventListenerAdded.current = true;
+
+      const playbackQueueEndedListener = TrackPlayer.addEventListener(
+        'playback-queue-ended',
+        async () => {
+          if (!isTrackEnded) {
+            dispatch(setTrackEnded(true));
+            console.log('Track ended', surahDetail?.id);
+            setCurrentPlayingAyah({});
+            setCurrentAyahIndex(null);
+            getAudioUrlData(reciters?.reciterId, false);
+            setIsPlaying(false);
+            if (scrollingRef?.current) {
+              scrollingRef?.current?.scrollToIndex({index: 0});
+            }
+          }
+        },
+      );
+      const unsubscribe = navigation.addListener('blur', async () => {
+        await TrackPlayer.stop();
+        setIsPlaying(false);
+      });
+      return async () => {
+        playbackQueueEndedListener.remove();
+        await TrackPlayer.reset();
+        stopAudioPlay();
+        handleStopAutoScrolling();
+        dispatch(setSpeedCounting(1));
+        unsubscribe();
+      };
+    }
   }, []);
 
   const togglePlayAudio = async () => {
+    dispatch(setTrackEnded(false));
+    eventListenerAdded.current = false;
     if (isPlaying) {
-        await TrackPlayer.pause();
-        setIsPlaying(false);
+      TrackPlayer.pause();
+      setIsPlaying(false);
     } else {
-        await TrackPlayer.setRate(playbackSpeed); // Set playback speed
-        await TrackPlayer.play();
-        setIsPlaying(true);
+      TrackPlayer.play();
+      setIsPlaying(true);
     }
-};
-
-const changePlaybackSpeed = async () => {
-  const newSpeed = playbackSpeed === 1.0 ? 1.5 : playbackSpeed === 1.5 ? 2.0 : 1.0;
-  setPlaybackSpeed(newSpeed);
-  await TrackPlayer.setRate(newSpeed);
-};
+  };
 
   useFocusEffect(
     React.useCallback(() => {
       TrackPlayer.setupPlayer().then(() => {});
-      getAudioUrlData(reciters?.reciter_id, false);
+
+      getAudioUrlData(reciters?.reciterId, false);
     }, []),
   );
 
-  // const getAudioUrlData = async (reciter_id, isReset) => {
-  //   let audioData = {};
-  //   try {
-  //     if (fromjuz) {
-  //       const juzId = surahDetail?.id;
-  //       audioData = await getAudioUrlByJuz(reciter_id, juzId);
-  //     } else {
-  //       const chapterId = surahDetail?.id;
-  //       audioData = await getAudioUrlByChapter(reciter_id, chapterId);
-  //     }
-  //     if (audioData?.audioFiles?.length != 0) {
-  //       const updatedRecitationsData = audioData?.audioFiles?.map(
-  //         (item, index) => ({
-  //           ...item,
-  //           id: index + 1,
-  //           url: `https://verses.quran.com/${item?.url}`,
-  //         }),
-  //       );
-  //       setAudioList(updatedRecitationsData);
-  //       // dispatch(setChapterAudioList(updatedRecitationsData));
-
-  //       await TrackPlayer.stop(); // Stop previous track before playing new one
-  //       await TrackPlayer.reset(); // Reset TrackPlayer instance
-  //       await TrackPlayer.add(updatedRecitationsData);
-
-  //       if (isReset) {
-  //         const Id = currentAyahIndex || 0;
-  //         await TrackPlayer.skip(Id);
-  //         setIsPlay(true);
-  //         setIsPlaying(true);
-  //         await TrackPlayer.play();
-  //       }
-  //     } else {
-  //       Alert.alert(
-  //         '',
-  //         'Please select other reciter ',
-  //         [
-  //           {
-  //             text: 'OK',
-  //             onPress: () => setReciteModalVisible(true),
-  //             style: 'default',
-  //           },
-  //         ],
-  //         {cancelable: false},
-  //       );
-  //     }
-  //   } catch (err) {
-  //     if (err instanceof Error) {
-  //       try {
-  //         const errorData = JSON.parse(err.message.replace('API error: ', ''));
-  //         errorStatus = errorData?.status;
-  //         errorMessage = errorData?.error;
-  //       } catch (error) {
-  //         // console.error('Error error message==>', error);
-  //       }
-  //     }
-  //     Alert.alert(
-  //       '',
-  //       errorMessage,
-  //       [
-  //         {
-  //           text: 'OK',
-  //           onPress: () => {
-  //             if (errorStatus == 404) {
-  //               setReciteModalVisible(true);
-  //             }
-  //           },
-  //           style: 'default',
-  //         },
-  //       ],
-  //       {cancelable: false},
-  //     );
-  //   }
-  // };
-
-const getAudioUrlData = async (reciter_id, isReset) => {
-  let audioData = {};
-  try {
-      // Fetch audio data based on the current Surah
-      if (fromjuz) {
-          const juzId = surahDetail?.id;
-          audioData = await getAudioUrlByJuz(reciter_id, juzId);
-      } else {
-          const chapterId = surahDetail?.id;
-          audioData = await getAudioUrlByChapter(reciter_id, chapterId);
-      }
-
-      // Check if audio files exist
-      if (audioData?.audioFiles?.length !== 0) {
-          const updatedRecitationsData = audioData?.audioFiles?.map(
-              (item, index) => ({
-                  ...item,
-                  id: index + 1,
-                  url: `https://verses.quran.com/${item?.url}`,
-              }),
-          );
-
-          // Reset TrackPlayer before adding new tracks
-          await TrackPlayer.reset();
-          console.log('Resetting TrackPlayer before adding new tracks');
-          console.log('Adding new tracks for Surah:', surahDetail?.id);
-          await TrackPlayer.add(updatedRecitationsData);
-
-          if (isReset) {
-              const Id = currentAyahIndex || 0;
-              await TrackPlayer.skip(Id);
-              setIsPlay(true);
-              setIsPlaying(true);
-              await TrackPlayer.play();
-          }
-      } else {
-          Alert.alert(
-              '',
-              'Please select another reciter',
-              [
-                  {
-                      text: 'OK',
-                      onPress: () => setReciteModalVisible(true),
-                      style: 'default',
-                  },
-              ],
-              { cancelable: false },
-          );
-      }
-  } catch (err) {
-      console.error('Error fetching audio data:', err);
-      Alert.alert('Error', 'There was an error fetching audio data.');
-  }
-};
-
-  const playSingleAyah = async (ayahItem) => {
+  const getAudioUrlData = async (reciterId, isReset) => {
+    let audioData = {};
     try {
-        const reciter_id = reciters?.reciter_id;
-        const audioData = await getAudioUrlByChapter(reciter_id, ayahItem?.chapterId);
-        const ayahAudio = audioData?.audioFiles?.find(audio => audio.verseKey === ayahItem.verseKey);
-        if (ayahAudio) {
-          let url = ayahAudio.url;
-          const isUrlContainsDotCom = url.includes('.com');
-          if (isUrlContainsDotCom) {
-            if (url.startsWith('//')) {
-            const updatedAudio = {
-                url :  `https:${url}`,
-                title: `Ayah ${ayahItem.verseNumber}`, // Set the title for the track
-            };
-                        
-            await TrackPlayer.stop(); // Stop previous track before playing new one
-            await TrackPlayer.reset();
-            await TrackPlayer.add(updatedAudio);
-            await TrackPlayer.play(); // Play the audio
-            setCurrentAyahIndex(ayahItem.verseNumber); // Update the current Ayah index         
+      if (fromjuz) {
+        const juzId = surahDetail?.id;
+        audioData = await getAudioUrlByJuz(reciterId, juzId);
+      } else {
+        const chapterId = surahDetail?.id;
+        audioData = await getAudioUrlByChapter(reciterId, chapterId);
+      }
+      if (audioData?.audioFiles?.length != 0) {
+        const updatedRecitationsData = audioData?.audioFiles?.map(
+          (item, index) => {
+            let url = item?.url;
+            const isUrlContainsDotCom = url.includes('.com');
+            if (isUrlContainsDotCom) {
+              if (url.startsWith('//')) {
+                url = `https:${url}`;
+              }
+            } else {
+              url = `https://verses.quran.com/${url}`;
             }
-          } else {
-            const updatedAudio = {
-                url : `https://verses.quran.com/${ayahAudio.url}`,
-                title: `Ayah ${ayahItem.verseNumber}`,
-          };
+            return {
+              ...item,
+              id: index + 1,
+              url: url,
+            };
+          },
+        );
+        setAudioList(updatedRecitationsData);
+        // dispatch(setChapterAudioList(updatedRecitationsData));
 
-          await TrackPlayer.stop(); // Stop previous track before playing new one
-          await TrackPlayer.reset();
-          await TrackPlayer.add(updatedAudio);
-          await TrackPlayer.play(); // Play the audio
-          setCurrentAyahIndex(ayahItem.verseNumber); // Update the current Ayah index     
-          }
-        } else {
-            Alert.alert('Audio not found', 'The audio for this Ayah is not available.');
+        await TrackPlayer.stop(); // Stop previous track before playing new one
+        await TrackPlayer.reset(); // Reset TrackPlayer instance
+        await TrackPlayer.add(updatedRecitationsData);
+
+        if (isReset) {
+          const Id = currentAyahIndex || 0;
+          await TrackPlayer.skip(Id);
+          setIsPlay(true);
+          setIsPlaying(true);
+          await TrackPlayer.play();
         }
-    } catch (error) {
-        console.error('Error playing Ayah:', error);
-        Alert.alert('Error', 'There was an error trying to play this Ayah.');
+      } else {
+        Alert.alert(
+          '',
+          'Please select other reciter ',
+          [
+            {
+              text: 'OK',
+              onPress: () => setReciteModalVisible(true),
+              style: 'default',
+            },
+          ],
+          {cancelable: false},
+        );
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        try {
+          const errorData = JSON.parse(err.message.replace('API error: ', ''));
+          errorStatus = errorData?.status;
+          errorMessage = errorData?.error;
+        } catch (error) {
+          // console.error('Error error message==>', error);
+        }
+      }
+      Alert.alert(
+        '',
+        errorMessage,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (errorStatus == 404) {
+                setReciteModalVisible(true);
+              }
+            },
+            style: 'default',
+          },
+        ],
+        {cancelable: false},
+      );
     }
-};
+  };
 
   //=== get current play Ayah===
   useEffect(() => {
     const fetchCurrentTrackIndex = async () => {
       if (isPlay && isPlaying) {
         const currentTrackItem = await TrackPlayer.getActiveTrack();
-
+        const trackId = currentTrackItem?.id;
         if (currentTrackItem) {
-          setCurrentPlayingAyah(currentTrackItem);
-          const trackId = currentTrackItem?.id;
-          setCurrentAyahIndex(trackId);
           const currentIndex = trackId - 1;
           if (!openAyahDetailView) {
             if (currentIndex && scrollingRef?.current) {
@@ -971,6 +878,8 @@ const getAudioUrlData = async (reciter_id, isReset) => {
               // scrollToCurrentAyah(currentIndex)
             }
           }
+          setCurrentPlayingAyah(currentTrackItem);
+          setCurrentAyahIndex(trackId);
         } else {
           setCurrentPlayingAyah({});
           setCurrentAyahIndex(null);
@@ -1034,7 +943,6 @@ const getAudioUrlData = async (reciter_id, isReset) => {
   const seekTo = async value => {
     await TrackPlayer?.seekTo(value);
   };
-
   const stopAudioPlay = async () => {
     await TrackPlayer.stop();
     await TrackPlayer.reset();
@@ -1064,7 +972,6 @@ const getAudioUrlData = async (reciter_id, isReset) => {
       console.log('Error sharing:', error.message);
     }
   };
-
   const versesItemRenderItem = ({item, index}) => {
     const checkIsPin = item?.id == isGetPinAyah?.AyahItem?.id;
     const lightYellowBackground = checkIsPin ? COLORS.SlateYellow : COLORS.gray;
@@ -1099,18 +1006,21 @@ const getAudioUrlData = async (reciter_id, isReset) => {
             shareMessage(item);
             onClickReturnSearch();
           }}
-          onPressPlayIcon={async () => {
-            setFromPlayIcon(false);
+          onPressPlayIcon={() => {
+            dispatch(setTrackEnded(false));
+            eventListenerAdded.current = false;
+            setFromPlayIcon(true);
             setSelectedAyah(item);
-            if (!global.isFirstTime) {
+            if (!global.isFirstTime && !isPlaying) {
+              global.isFirstTime = true;
               if (!isEmpty(saveCurrentAyah)) {
-                await playSingleAyah(item); 
+                setLastPlayAyahVisible(true);
               } else {
-                await playSingleAyah(item); 
+                onPressAyahPlayIcon(item?.verseNumber);
               }
             } else {
-              await playSingleAyah(item); 
-            }  
+              onPressAyahPlayIcon(item?.verseNumber);
+            }
           }}
           saveBookmark={bookmarked(item)}
           onPressBookmarkIcon={() => {
@@ -1126,7 +1036,6 @@ const getAudioUrlData = async (reciter_id, isReset) => {
           onPressPinIcon={() => {
             onClickPin(item);
           }}
-          additionalText={additionalTexts[item.id] || ''} 
         />
 
         <AyahViewComponent
@@ -1157,8 +1066,8 @@ const getAudioUrlData = async (reciter_id, isReset) => {
       });
     }
   };
+
   return (
-    
     <View style={styles.safeAreaView}>
       <Header
         title={
@@ -1191,9 +1100,8 @@ const getAudioUrlData = async (reciter_id, isReset) => {
         </View>
       ) : (
         <>
-        
-              {!openAyahDetailView ? (
-              <>
+          {!openAyahDetailView ? (
+            <>
               {!fromjuz && (
                 <View style={styles.topMainView}>
                   <View style={styles.leftTextView}>
@@ -1234,7 +1142,7 @@ const getAudioUrlData = async (reciter_id, isReset) => {
                             lineHeight: Platform.OS === 'android' ? 45 : 0,
                           },
                         ]}>
-                         سورة {ar[surahDetail?.id]?.transliteratedName}
+                        {ar[surahDetail?.id]?.transliteratedName}
                       </Text>
                     </View>
                     <View style={styles.rigntImageView}>
@@ -1290,71 +1198,11 @@ const getAudioUrlData = async (reciter_id, isReset) => {
                   }}
                 />
               </View>
-              </>
-              ) : (
-              <View style={{flex: 1}}>
-             
-             {!fromjuz && (
-                <View style={styles.topMainView}>
-                  <View style={styles.leftTextView}>
-                    <View style={styles.topviewStyle}>
-                      <Text style={styles.titleText}>
-                        {surahDetail?.transliteratedName}
-                      </Text>
-                    </View>
-                    <View style={styles.topviewStyle}>
-                      <Text style={styles.subText}>
-                        {surahDetail?.translatedName}
-                      </Text>
-                    </View>
-                    <View style={styles.topviewStyle}>
-                      <Text
-                        style={
-                          styles.subText
-                        }>{`Reveled: ${surahDetail?.revelationPlace}`}</Text>
-                    </View>
-                    <View style={styles.topviewStyle}>
-                      <Text
-                        style={
-                          styles.subText
-                        }>{`Total Ayahs: ${surahDetail?.versesCount}`}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.rightViewStyle}>
-                    <View style={styles?.container}>
-                      <Text
-                        style={[
-                          styles.rightTitleText,
-                          {
-                            ...FONTSTYLE(
-                              Platform.OS === 'android'
-                                ? isArabicFont?.key
-                                : FONTS[isArabicFont?.key],
-                            ).bigTitle,
-                            lineHeight: Platform.OS === 'android' ? 45 : 0,
-                          },
-                        ]}>
-                         سورة {ar[surahDetail?.id]?.transliteratedName}
-                      </Text>
-                    </View>
-                    <View style={styles.rigntImageView}>
-                      {surahDetail?.revelationPlace == 'makkah' ? (
-                        <Image
-                          style={styles.rightIconStyle}
-                          source={IMAGES.makkahIcon}
-                        />
-                      ) : surahDetail?.revelationPlace == 'madinah' ? (
-                        <Image
-                          style={styles.rightIconStyle}
-                          source={IMAGES.medinanIcon2}
-                        />
-                      ) : null}
-                    </View>
-                  </View>
-                </View>
-              )}              
+            </>
+          ) : (
+            <View style={{flex: 1}}>
               <ImageBackground
-                source={IMAGES.backGroundImgOne}
+                source={IMAGES.backGroundImg}
                 resizeMode="cover"
                 style={styles.backgroundImageStyle}>
                 <View
@@ -1370,80 +1218,117 @@ const getAudioUrlData = async (reciter_id, isReset) => {
                     },
                   ]}
                   onLayout={handleLayout}>
-                   <ScrollView
-                   style={{padding: 2,}}
+                  <ScrollView
                     showsVerticalScrollIndicator={false}
                     ref={ayahRefs}
-                    scrollEventThrottle={16} 
+                    scrollEventThrottle={16} // Adjust scroll event throttle as needed
                     onScroll={({nativeEvent}) => {
                       if (isReachedEnd(nativeEvent)) {
                         handleStopAutoScrolling();
                       }
-                    }}>                 
-                  <View>
-  <Text
-    style={{textAlign: "justify" }}
-    adjustsFontSizeToFit
-  >
-    {verseDetailList &&
-      verseDetailList.map((item, index) => {
-        return (
-          <React.Fragment key={index}>
-            <Text
-              key={index}
-              style={{
-                ...FONTSTYLE(
-                  Platform.OS === "android"
-                    ? isArabicFont?.key
-                    : FONTS[isArabicFont?.key],
-                  arabicFontSize
-                ).arabicText,
-                color:
-                  currentAyahIndex === index + 1
-                    ? COLORS?.yellow
-                    : COLORS?.primaryGray,
-              }}
-            >
-              {item?.textUthmani}
-            </Text>
-            <Text
-              style={[
-                {
-                  ...FONTSTYLE(
-                    FONTS.trochutBold,
-                    arabicFontSize *
-                      (item?.id < 100
-                        ? 0.5
-                        : item?.id < 1000
-                        ? 0.4
-                        : 0.3)
-                  ).arabicText,
-                  color:
-                    currentAyahIndex === index + 1
-                      ? COLORS?.yellow
-                      : COLORS?.primaryGray,
-                  position: "absolute",
-                },
-                styles.numberTextStyle,
-              ]}
-            >
-              {" "}
-              ﴿{item?.verseKey.split(":")[1]}﴾{" "}
-            </Text>
+                    }}>
+                    <Text
+                      style={[
+                        {
+                          ...FONTSTYLE(
+                            Platform.OS === 'android'
+                              ? isArabicFont?.key
+                              : FONTS[isArabicFont?.key],
+                            arabicFontSize,
+                          ).bigTitle,
+                          lineHeight: Platform.OS === 'android' ? 40 : 0,
+                        },
+                        styles.ayahTitleText,
+                      ]}>
+                      {ar[surahDetail?.id]?.transliteratedName}
+                    </Text>
+                    <View style={styles.subTextView}>
+                      <Text key={currentAyahIndex}>
+                        {verseDetailList?.map((item, index) => (
+                          <Text
+                            style={styles.detailTextView}
+                            key={index.toString()}
+                            onLayout={event => onItemLayout(event, index)}>
+                            <Text
+                              style={{
+                                ...FONTSTYLE(
+                                  Platform.OS === 'android'
+                                    ? isArabicFont?.key
+                                    : FONTS[isArabicFont?.key],
+                                  arabicFontSize,
+                                ).arabicText,
+                                color:
+                                  currentAyahIndex === index + 1
+                                    ? COLORS?.yellow
+                                    : COLORS?.black,
+                              }}>
+                              {item?.textUthmani}
+                            </Text>
+                            <View
+                              style={{
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}>
+                              <Image
+                                source={IMAGES.numberBackIcon}
+                                resizeMode="contain"
+                                style={[
+                                  styles.numberBackStyle,
+                                  {
+                                    height:
+                                      arabicFontSize *
+                                      (item?.id > 1000
+                                        ? 0.9
+                                        : item?.id > 100
+                                        ? 0.85
+                                        : 0.8),
 
-          </React.Fragment>
-        );
-      })}
-  </Text>
-</View>
+                                    width:
+                                      arabicFontSize *
+                                      (item?.id > 1000
+                                        ? 1
+                                        : item?.id > 100
+                                        ? 0.97
+                                        : 0.9),
+                                  },
+                                ]}
+                              />
+                              <Text
+                                style={[
+                                  {
+                                    ...FONTSTYLE(
+                                      FONTS.trochutBold,
+                                      arabicFontSize *
+                                        (item?.id < 100
+                                          ? 0.5
+                                          : item?.id < 1000
+                                          ? 0.4
+                                          : 0.3),
+                                    ).arabicText,
+                                    color:
+                                      currentAyahIndex === index + 1
+                                        ? COLORS?.yellow
+                                        : COLORS?.primaryGray,
+                                    position: 'absolute',
+                                  },
+                                  styles.numberTextStyle,
+                                ]}>
+                                {`${item?.verseKey.split(':')[1]} `}
+                                {/* {` ${item?.id} `} */}
+                              </Text>
+                            </View>
+                          </Text>
+                        ))}
+                      </Text>
+                    </View>
                   </ScrollView>
                 </View>
               </ImageBackground>
-              </View>
-              )}
-                           
-              {isPlay && (
-              <View>
+            </View>
+          )}
+
+          {isPlay && (
+            <View>
               <BottomView
                 onPressPlaySetting={onClickPlaySetting}
                 onPressPlayMusic={onClickPlayMusic}
@@ -1485,27 +1370,20 @@ const getAudioUrlData = async (reciter_id, isReset) => {
                     : false
                 }
               />
-              </View>
-              )}
-              {showPinMessage && (
-              <View>
+            </View>
+          )}
+          {showPinMessage && (
+            <View>
               <PinMessage
                 pinText={
                   isPinAyahItem?.id == isGetPinAyah?.AyahItem?.id ? true : false
                 }
                 pinItem={isPinAyahItem}
               />
-              </View>
-              )}
-              {isPlaying &&(
-               <View style = {{resizeMode:"contain",top:600,right:35,alignSelf:"flex-end",width:50,height:50,position:"absolute"}}>
-                <TouchableOpacity style={styles.fab} onPress={changePlaybackSpeed}>
-                  <Text style={styles.fabText}>{playbackSpeed}x</Text>
-                </TouchableOpacity>
-                </View>
-                )}
-            </>
-        )}
+            </View>
+          )}
+        </>
+      )}
 
       <SearchModalComponent
         visible={searchModalVisible}
@@ -1572,6 +1450,7 @@ const getAudioUrlData = async (reciter_id, isReset) => {
     </View>
   );
 };
+
 const styles = ScaledSheet.create({
   safeAreaView: {
     flex: 1,
@@ -1590,8 +1469,9 @@ const styles = ScaledSheet.create({
     paddingHorizontal: '15@s',
     alignItems: 'center',
     backgroundColor: COLORS.white,
+    marginBottom: '10@s',
   },
-  topviewStyle: {top:3},
+  topviewStyle: {marginBottom: '2@s'},
   leftTextView: {width: '35%', marginRight: '3@s'},
   titleText: {
     ...FONTSTYLE(FONTS.poppinsMedium).inputs,
@@ -1617,6 +1497,7 @@ const styles = ScaledSheet.create({
     textAlign: 'right',
     color: COLORS.black,
   },
+
   backgroundImageStyle: {
     resizeMode: 'contain',
     flex: 1,
@@ -1625,35 +1506,32 @@ const styles = ScaledSheet.create({
     margin: '15@s',
     borderRadius: 20,
     backgroundColor: COLORS.white,
-    paddingHorizontal: '10@s',
+    paddingHorizontal: '20@s',
     alignItems: 'center',
-    paddingTop: '2@s',  
+    paddingTop: '5@s',
+  },
+  ayahTitleText: {
+    textAlign: 'center',
+    color: COLORS.darkblue,
+    paddingTop: '5@s',
   },
   subTextView: {
-    paddingTop: '5@s',
+    paddingTop: '8@s',
   },
   loaderViewStyle: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
   },
-  numberTextStyle: {top: '3@s'},
-  emptyViewStyle: {marginTop: SIZES.height / 3},
-  fab: {
-    backgroundColor: '#6200ee',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  numberBackStyle: {
+    resizeMode: 'contain',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
   },
-  fabText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
+  numberTextStyle: {margin: '2@s'},
+  emptyViewStyle: {marginTop: SIZES.height / 3},
+  detailTextView: {
+    textAlign: 'center',
   },
 });
-
-
 export default SurahDetailPage;
