@@ -43,6 +43,7 @@ app.use("/api/tasbihverse", require("./routes/tasbihverse.routes"));
 app.use("/api/tasbihsversebyid", require("./routes/tasbihversebyid.routes"));
 app.use("/api/ramadanvideos", require("./routes/ramadanvideo.routes"));
 app.use("/api/ramadandata", require("./routes/ramadandata.routes"));
+app.use("/api/ramadancalender", require("./routes/ramadancalender.routes"));
 app.use("/api/wudhuvideos", require("./routes/wudhuvideo.routes"));
 app.use('/uploads', express.static('uploads'))
 app.use(errorHandler);
