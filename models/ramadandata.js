@@ -2,11 +2,15 @@ const mongoose = require("mongoose");
 
 const ramadandataSchema = mongoose.Schema(
     {
-      ramadanday: {
+      ramadanduaeglish: {
         type: String,
         default: ""
       },
-      ramadancurrentdate: {
+      ramadanduaarabic: {
+        type: String,
+        default: ""
+      },
+      ramadanduatranslation: {
         type: String,
         default: ""
       },
