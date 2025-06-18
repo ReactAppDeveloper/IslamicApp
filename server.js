@@ -47,6 +47,7 @@ app.use("/api/ramadancalender", require("./routes/ramadancalender.routes"));
 app.use("/api/ramadantime", require("./routes/ramadantime.routes"));
 app.use("/api/wudhuvideos", require("./routes/wudhuvideo.routes"));
 app.use("/api/homedua", require("./routes/homedua.routes"));
+app.use("/api/reels", require("./routes/reel.routes"));
 app.use('/uploads', express.static('uploads'))
 app.use(errorHandler);
 
