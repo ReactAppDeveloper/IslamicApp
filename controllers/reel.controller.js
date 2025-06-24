@@ -14,6 +14,10 @@ const CreateReel= asyncHandler(async (req, res) => {
   });
   res.status(200).json(reel);
 });
+const getreelbyid = asyncHandler(async (req, res) => {
+  const reel = await Reel.find(new mongoose.Types.ObjectId(req.params.id))
+  res.status(200).json(reel);
+});
 const UpdateReel = asyncHandler(async (req, res) => {
   const reel = {_id: req.params.id};
   Reel.updateOne(reel,req.body)
@@ -35,6 +39,7 @@ const DeleteReel = asyncHandler(async (req, res) => {
 
 module.exports = {
   getAllReel,
+  getreelbyid,
   CreateReel,
   UpdateReel,
   DeleteReel
