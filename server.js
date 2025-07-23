@@ -12,7 +12,6 @@ const app = express();
 
 const port = process.env.PORT || 3000;
 
-// enable files upload
 app.use(fileUpload({
     createParentPath: true
 }));
@@ -49,7 +48,9 @@ app.use("/api/wudhuvideos", require("./routes/wudhuvideo.routes"));
 app.use("/api/homedua", require("./routes/homedua.routes"));
 app.use("/api/reels", require("./routes/reel.routes"));
 app.use("/api/reelsbyid", require("./routes/reelbyid.routes"));
-app.use('/uploads', express.static('uploads'))
+app.use('/uploads', express.static('uploads'));
+app.use("/api/auth", require("./routes/auth.routes"));
+
 app.use(errorHandler);
 
 app.listen(port, () => {
