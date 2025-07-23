@@ -14,13 +14,16 @@
   "author": "MR",
   "license": "MIT",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "cloudinary": "^1.35.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "express-async-handler": "^1.2.0",
     "express-fileupload": "^1.4.0",
-    "mongoose": "^7.5.2"
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.5.2",
+    "nodemailer": "^7.0.5"
   },
   "devDependencies": {
     "nodemon": "^2.0.21"
