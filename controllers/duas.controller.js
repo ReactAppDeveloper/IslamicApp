@@ -40,8 +40,6 @@ const DeleteDuas = asyncHandler(async (req, res) => {
   });
  })
 });
-
-
 module.exports = {
   getDuas,
   getindDuas,
