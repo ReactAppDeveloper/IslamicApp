@@ -52,6 +52,7 @@ app.use('/uploads', express.static('uploads'));
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/islamiccategories", require("./routes/islamiccategory.routes"));
 app.use("/api/islamiccategoriesbyid", require("./routes/islamiccategorybyid.routes"));
+app.use("/api/islsubcategories", require("./routes/islsubcategory.routes"));
 
 app.use(errorHandler);
 
