@@ -3,12 +3,6 @@ const IslSubCategory = require("../models/islsubcategory");
 const mongoose = require("mongoose");
 const cloudinary = require('cloudinary').v2;
 
-const getAllIslSubCategory= asyncHandler(async (req, res) => {
-  const allIslsubcategory = await IslSubCategory.find()
-    .sort({ id: 1 });
-  res.status(200).json(allIslsubcategory);
-});
-
 const getIslSubCategory = asyncHandler(async (req, res) => {
   const islsubcategory = await IslSubCategory.find({ categoryId: new mongoose.Types.ObjectId(req.query.categoryId) })
     .skip(parseInt(req.query.start))
@@ -44,7 +38,6 @@ const createIslSubCategory = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  getAllIslSubCategory,
   getIslSubCategory,
   createIslSubCategory
 };
