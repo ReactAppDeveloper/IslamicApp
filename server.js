@@ -57,6 +57,7 @@ app.use("/api/allislsubcategory", require("./routes/allislsubcategory.routes"));
 app.use("/api/allislamicstory", require("./routes/allislamicstory.routes"));
 app.use("/api/islamicstory", require("./routes/islamicstory.routes"));
 app.use("/api/islamicstorybyid", require("./routes/islamicstorybyid.routes"));
+app.use("/api/islamicstorybystoryid", require("./routes/islamicstorybystoryid.routes"));
 
 app.use(errorHandler);
 
