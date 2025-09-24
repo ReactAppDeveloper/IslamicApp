@@ -19,6 +19,15 @@ const islamicstorySchema = mongoose.Schema(
         required: true,
         ref: "islamiccategories",
       },
+      storyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: "islsubcategories",
+      },
+      isfree: {
+        type: String,
+        required: [true, "Is Free or not"],
+      },
       language: {
         type: String,
         required: [true, "Story language is required"],
@@ -29,7 +38,7 @@ const islamicstorySchema = mongoose.Schema(
       },
       longdescription: {
         type: String,
-        required: [true, "Story longdescription is required"],
+        required: [true, "Longdescription is required"],
       },
       duration: {
         type: String,

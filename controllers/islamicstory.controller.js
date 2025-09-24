@@ -21,6 +21,12 @@ const getIslamicStory = asyncHandler(async (req, res) => {
     });
   }
 });
+const getIslamicStorybyStoryID = asyncHandler(async (req, res) => {
+  const islstory = await IslamicStory.find({ storyId: new mongoose.Types.ObjectId(req.query.storyId) })
+    .skip(parseInt(req.query.start))
+    .limit(parseInt(req.query.limit));
+  res.status(200).json(islstory);
+});
 const getStoryVersesbyID = asyncHandler(async (req, res) => {
   const islamicstoryverses = await IslamicStory.find(new mongoose.Types.ObjectId(req.params.id))
   res.status(200).json(islamicstoryverses);
@@ -57,6 +63,7 @@ const DeleteIslamicStory = asyncHandler(async (req, res) => {
 module.exports = {
   getAllIslamicStory,
   getIslamicStory,
+  getIslamicStorybyStoryID,
   getStoryVersesbyID,
   CreateIslamicStory,
   UpdateIslamicStory,
