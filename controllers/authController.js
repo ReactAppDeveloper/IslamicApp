@@ -8,25 +8,20 @@ const CLIENT_URL = 'muslimapp://reset-password'; // Deep link
 
 exports.signup = async (req, res) => {
   const { name, email, password } = req.body;
-  console.log('Incoming signup request:', req.body); // 🔍 Log input
 
   try {
     const existing = await User.findOne({ email });
     if (existing) {
-      console.log('User already exists');
-      return res.status(400).json({ message: 'Email already exists' });
+      return res.status(400).json({ success: false, message: 'Email already exists' });
     }
 
     const hashed = await bcrypt.hash(password, 10);
     const user = new User({ name, email, password: hashed });
     await user.save();
 
-    console.log('✅ User saved to DB:', user); // 🔍 Log saved user
-
-    res.status(201).json({ message: 'User registered' });
+    res.status(201).json({ success: true, message: 'User registered' });
   } catch (err) {
-    console.error('❌ Signup error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
