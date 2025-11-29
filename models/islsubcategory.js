@@ -15,6 +15,18 @@ const islsubcategorySchema = mongoose.Schema(
         required: true,
         ref: "islamiccategories",
       },
+      isfree: {
+        type: String,
+        required: [true, "Is Free or not"],
+      },
+      topchoice: {
+        type: String,
+        required: [true, "Top Choices T/F"],
+      },
+      newarrival: {
+        type: String,
+        required: [true, "New Arrival T/F"],
+      },
     },
     {
       timestamps: true,

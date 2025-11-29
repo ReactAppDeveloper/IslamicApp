@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
-const IslamicStory = require("../models/islamicstory.controller");
+const IslamicStory = require("../models/islamicstory");
 
 const getAllIslamicStory= asyncHandler(async (req, res) => {
   const allislamicstory = await IslamicStory.find()
