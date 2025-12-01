@@ -11,22 +11,33 @@ const createSubscription = async (req, res) => {
     const customer = await stripe.customers.create({ email });
 
     // 2️⃣ Create subscription
-    let subscription = await stripe.subscriptions.create({
+    const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
       payment_behavior: "default_incomplete",
       expand: ["latest_invoice.payment_intent"],
     });
 
-    // Ensure payment intent exists
-    if (!subscription.latest_invoice.payment_intent) {
-      const latestInvoice = await stripe.invoices.retrieve(subscription.latest_invoice.id, {
+    // 3️⃣ Safely get payment intent
+    let paymentIntent;
+    if (
+      subscription.latest_invoice &&
+      subscription.latest_invoice.payment_intent
+    ) {
+      paymentIntent = subscription.latest_invoice.payment_intent;
+    } else {
+      const latestInvoiceId =
+        typeof subscription.latest_invoice === "string"
+          ? subscription.latest_invoice
+          : subscription.latest_invoice.id;
+
+      const latestInvoice = await stripe.invoices.retrieve(latestInvoiceId, {
         expand: ["payment_intent"],
       });
-      subscription.latest_invoice.payment_intent = latestInvoice.payment_intent;
+      paymentIntent = latestInvoice.payment_intent;
     }
 
-    // 3️⃣ Save to MongoDB
+    // 4️⃣ Save subscription to MongoDB
     await Subscription.create({
       email,
       stripeCustomerId: customer.id,
@@ -35,7 +46,11 @@ const createSubscription = async (req, res) => {
       status: "incomplete",
     });
 
-    res.json(subscription);
+    // 5️⃣ Return only necessary info
+    res.json({
+      subscriptionId: subscription.id,
+      clientSecret: paymentIntent?.client_secret,
+    });
   } catch (err) {
     console.error("Create subscription error:", err);
     res.status(500).json({ error: err.message });
@@ -48,7 +63,11 @@ const handleWebhook = async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
   } catch (err) {
     console.log("Webhook error:", err.message);
     return res.sendStatus(400);
