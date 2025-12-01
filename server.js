@@ -9,15 +9,21 @@ const dotenv = require("dotenv").config();
 connectDb();
 config();
 const app = express();
-
 const port = process.env.PORT || 3000;
 
-app.use(fileUpload({
-    createParentPath: true
-}));
-
 app.use(cors());
+
+// 1️⃣ Stripe Webhook MUST be raw — BEFORE express.json()
+app.use(
+  "/api/subscription/webhook",
+  express.raw({ type: "application/json" })
+);
+
+// 2️⃣ Normal middlewares AFTER webhook
 app.use(express.json());
+
+// Other middlewares
+app.use(fileUpload({ createParentPath: true }));
 app.use("/api/surahs", require("./routes/surah.routes"));
 app.use("/api/juzs", require("./routes/juz.routes"));
 app.use("/api/ayahs", require("./routes/ayah.routes"));
@@ -62,6 +68,7 @@ app.use("/api/allislamicstoryaudios", require("./routes/allislamicstoryaudios.ro
 app.use("/api/islamicstoryaudios", require("./routes/storiesaudios.routes"));
 app.use("/api/islamicstoryaudiosbyid", require("./routes/storyaudiobyid.routes"));
 app.use("/api/islamicstoryaudiosbystoryid", require("./routes/storyaudiobystoryid.routes"));
+// 3️⃣ Subscription routes (safe now)
 app.use("/api/subscription", require("./routes/subscription.routes"));
 
 app.use(errorHandler);

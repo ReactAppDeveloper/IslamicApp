@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const {createSubscription,handleWebhook} = require("../controllers/subscription.controller");
 
-// Create subscription
+const {createSetupIntent,createSubscription,handleWebhook} = require("../controllers/subscription.controller");
+
+router.post("/setup-intent", createSetupIntent);
+
 router.post("/create", createSubscription);
 
-// Webhook endpoint
-router.post("/webhook", express.raw({ type: "application/json" }), handleWebhook);
+router.post("/webhook",express.raw({ type: "application/json" }),handleWebhook);
 
 module.exports = router;
