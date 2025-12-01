@@ -64,6 +64,7 @@ app.use("/api/islamicstoryaudios", require("./routes/storiesaudios.routes"));
 app.use("/api/islamicstoryaudiosbyid", require("./routes/storyaudiobyid.routes"));
 app.use("/api/islamicstoryaudiosbystoryid", require("./routes/storyaudiobystoryid.routes"));
 
+app.use("/api/subscription", require("./routes/subscription.routes"));
 app.use(errorHandler);
 
 app.listen(port, () => {
