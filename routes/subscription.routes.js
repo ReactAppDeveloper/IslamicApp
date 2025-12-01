@@ -1,14 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const {
-  createSubscription,
-  handleWebhook,
-} = require("../controllers/subscription.controller");
+const { createSubscription, handleWebhook } = require("../controllers/subscription.controller");
 
-// Route to create a subscription
-router.route("/create").post(createSubscription);
+// Create subscription
+router.post("/create", createSubscription);
 
-// Route to handle Stripe webhook
-router.route("/webhook").post(handleWebhook);
+// Webhook
+router.post("/webhook", express.raw({ type: "application/json" }), handleWebhook);
 
 module.exports = router;
