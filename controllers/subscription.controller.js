@@ -2,66 +2,101 @@ const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const Subscription = require("../models/Subscription");
 
-// Create subscription
-const createSubscription = async (req, res) => {
+/**
+ * STEP 1 → Create SetupIntent
+ * This is called BEFORE the user uses PaymentSheet.
+ * PaymentSheet will save the card and attach a default payment method.
+ */
+const createSetupIntent = async (req, res) => {
   try {
-    const { email, priceId } = req.body;
+    const { email } = req.body;
 
-    // 1️⃣ Create Stripe customer
-    const customer = await stripe.customers.create({ email });
+    // 🔍 Find or create customer
+    let customer;
+    const existing = await stripe.customers.list({ email, limit: 1 });
 
-    // 2️⃣ Create subscription
-    const subscription = await stripe.subscriptions.create({
-      customer: customer.id,
-      items: [{ price: priceId }],
-      payment_behavior: "default_incomplete",
-      expand: ["latest_invoice.payment_intent"],
-    });
-
-    // 3️⃣ Safely get payment intent
-    let paymentIntent;
-    if (
-      subscription.latest_invoice &&
-      subscription.latest_invoice.payment_intent
-    ) {
-      paymentIntent = subscription.latest_invoice.payment_intent;
+    if (existing.data.length > 0) {
+      customer = existing.data[0];
     } else {
-      const latestInvoiceId =
-        typeof subscription.latest_invoice === "string"
-          ? subscription.latest_invoice
-          : subscription.latest_invoice.id;
-
-      const latestInvoice = await stripe.invoices.retrieve(latestInvoiceId, {
-        expand: ["payment_intent"],
-      });
-      paymentIntent = latestInvoice.payment_intent;
+      customer = await stripe.customers.create({ email });
     }
 
-    // 4️⃣ Save subscription to MongoDB
-    await Subscription.create({
-      email,
-      stripeCustomerId: customer.id,
-      stripeSubscriptionId: subscription.id,
-      priceId,
-      status: "incomplete",
+    // 🎯 Create SetupIntent so user can save card
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customer.id,
+      payment_method_types: ["card"],
     });
 
-    // 5️⃣ Return only necessary info
     res.json({
-      subscriptionId: subscription.id,
-      clientSecret: paymentIntent?.client_secret,
+      customerId: customer.id,
+      clientSecret: setupIntent.client_secret,
     });
+
   } catch (err) {
-    console.error("Create subscription error:", err);
+    console.log("SetupIntent Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Handle Stripe webhook
+
+/**
+ * STEP 2 → Create Subscription
+ * Called AFTER user completes PaymentSheet successfully.
+ */
+const createSubscription = async (req, res) => {
+  try {
+    const { customerId, priceId, email } = req.body;
+
+    // 🔍 Retrieve customer to check if card is attached
+    const customer = await stripe.customers.retrieve(customerId);
+
+    const defaultPaymentMethod =
+      customer.invoice_settings.default_payment_method;
+
+    if (!defaultPaymentMethod) {
+      return res.status(400).json({
+        error: "Customer has no default payment method. SetupIntent must be completed first.",
+      });
+    }
+
+    // 🎯 Create subscription using saved card
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      expand: ["latest_invoice.payment_intent"],
+    });
+
+    // 💾 Save subscription in MongoDB
+    await Subscription.create({
+      email: email || customer.email,
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscription.id,
+      priceId,
+      status: subscription.status,
+      currentPeriodEnd: subscription.current_period_end,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    });
+
+    res.json({
+      subscriptionId: subscription.id,
+      status: subscription.status,
+    });
+
+  } catch (err) {
+    console.log("Subscription Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * STEP 3 → Stripe Webhook
+ * Handles status updates: invoice.paid, subscription canceled, etc.
+ */
 const handleWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
-  let event;
 
+  let event;
   try {
     event = stripe.webhooks.constructEvent(
       req.body,
@@ -69,32 +104,52 @@ const handleWebhook = async (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.log("Webhook error:", err.message);
-    return res.sendStatus(400);
+    console.log("Webhook Error:", err.message);
+    return res.status(400).send(`Webhook error: ${err.message}`);
   }
 
   switch (event.type) {
-    case "invoice.paid":
+    case "invoice.paid": {
+      const invoice = event.data.object;
+
+      await Subscription.findOneAndUpdate(
+        { stripeSubscriptionId: invoice.subscription },
+        {
+          status: "active",
+          currentPeriodEnd: invoice.lines.data[0].period.end,
+        }
+      );
+      break;
+    }
+
+    case "invoice.payment_failed": {
       const invoice = event.data.object;
       await Subscription.findOneAndUpdate(
         { stripeSubscriptionId: invoice.subscription },
-        { status: "active" }
+        { status: "past_due" }
       );
       break;
+    }
 
-    case "customer.subscription.deleted":
-      const subscriptionDeleted = event.data.object;
+    case "customer.subscription.deleted": {
+      const sub = event.data.object;
+
       await Subscription.findOneAndUpdate(
-        { stripeSubscriptionId: subscriptionDeleted.id },
+        { stripeSubscriptionId: sub.id },
         { status: "canceled" }
       );
       break;
+    }
 
     default:
       console.log("Unhandled event type:", event.type);
   }
 
-  res.sendStatus(200);
+  res.json({ received: true });
 };
 
-module.exports = { createSubscription, handleWebhook };
+module.exports = {
+  createSetupIntent,
+  createSubscription,
+  handleWebhook,
+};
