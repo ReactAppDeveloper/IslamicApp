@@ -1,12 +1,18 @@
 const express = require("express");
 const router = express.Router();
+const {
+  createSetupIntent,
+  createSubscription,
+  handleWebhook,
+} = require("../controllers/subscription.controller");
 
-const {createSetupIntent,createSubscription,handleWebhook} = require("../controllers/subscription.controller");
+// ✅ Setup Intent
+router.route("/setup-intent").post(createSetupIntent);
 
-router.post("/setup-intent", createSetupIntent);
+// ✅ Create Subscription
+router.route("/create").post(createSubscription);
 
-router.post("/create", createSubscription);
-
-router.post("/webhook",express.raw({ type: "application/json" }),handleWebhook);
+// ✅ Stripe Webhook (raw body required)
+router.route("/webhook").post(express.raw({ type: "application/json" }), handleWebhook);
 
 module.exports = router;
