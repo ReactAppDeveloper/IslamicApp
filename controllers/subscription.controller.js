@@ -36,28 +36,32 @@ const createSetupIntent = async (req, res) => {
 // STEP 2 — Create Subscription
 const createSubscription = async (req, res) => {
   try {
-    const { customerId, priceId, email } = req.body;
+    const { customerId, priceId, email, paymentMethodId } = req.body;
 
-    const customer = await stripe.customers.retrieve(customerId);
-
-    if (!customer.invoice_settings.default_payment_method) {
-      return res.status(400).json({
-        error: "No default payment method. Complete SetupIntent first!",
-      });
+    if (!paymentMethodId) {
+      return res.status(400).json({ error: "Payment method is required" });
     }
+
+    // Attach payment method to customer
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+
+    // Set as default payment method
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
 
     // Create subscription
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
-      payment_behavior: "default_incomplete",
+      expand: ['latest_invoice.payment_intent'],
     });
 
     // Save or update in DB
     await Subscription.findOneAndUpdate(
       { stripeSubscriptionId: subscription.id },
       {
-        email: email || customer.email,
+        email: email,
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscription.id,
         priceId,
