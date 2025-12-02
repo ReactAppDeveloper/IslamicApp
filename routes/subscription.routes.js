@@ -1,18 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const {
-  createSetupIntent,
+  createEphemeralKey,
   createSubscription,
   handleWebhook,
 } = require("../controllers/subscription.controller");
 
-// ✅ Setup Intent
-router.route("/setup-intent").post(createSetupIntent);
+// Ephemeral Key
+router.post("/ephemeral-key", createEphemeralKey);
 
-// ✅ Create Subscription
-router.route("/create").post(createSubscription);
+// Create subscription
+router.post("/create", createSubscription);
 
-// ✅ Stripe Webhook (raw body required)
-router.route("/webhook").post(express.raw({ type: "application/json" }), handleWebhook);
+// Stripe Webhook
+router.post("/webhook", express.raw({ type: "application/json" }), handleWebhook);
 
 module.exports = router;

@@ -1,19 +1,22 @@
+// server.js
 const express = require("express");
 const connectDb = require("./config/dbConnection");
-const fileUpload = require('express-fileupload');
-const cors = require('cors');
+const fileUpload = require("express-fileupload");
+const cors = require("cors");
 const errorHandler = require("./middleware/errorHandler");
 const config = require("./config/cloudinaryConfig");
 const dotenv = require("dotenv").config();
 
 connectDb();
 config();
+
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Enable CORS
 app.use(cors());
 
-// 1️⃣ Stripe Webhook MUST be raw — BEFORE express.json()
+// 1️⃣ Stripe Webhook MUST be raw BEFORE express.json()
 app.use(
   "/api/subscription/webhook",
   express.raw({ type: "application/json" })
@@ -21,9 +24,9 @@ app.use(
 
 // 2️⃣ Normal middlewares AFTER webhook
 app.use(express.json());
-
-// Other middlewares
 app.use(fileUpload({ createParentPath: true }));
+
+// 3️⃣ App routes
 app.use("/api/surahs", require("./routes/surah.routes"));
 app.use("/api/juzs", require("./routes/juz.routes"));
 app.use("/api/ayahs", require("./routes/ayah.routes"));
@@ -54,7 +57,7 @@ app.use("/api/wudhuvideos", require("./routes/wudhuvideo.routes"));
 app.use("/api/homedua", require("./routes/homedua.routes"));
 app.use("/api/reels", require("./routes/reel.routes"));
 app.use("/api/reelsbyid", require("./routes/reelbyid.routes"));
-app.use('/uploads', express.static('uploads'));
+app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/islamiccategories", require("./routes/islamiccategory.routes"));
 app.use("/api/islamiccategoriesbyid", require("./routes/islamiccategorybyid.routes"));
@@ -68,11 +71,14 @@ app.use("/api/allislamicstoryaudios", require("./routes/allislamicstoryaudios.ro
 app.use("/api/islamicstoryaudios", require("./routes/storiesaudios.routes"));
 app.use("/api/islamicstoryaudiosbyid", require("./routes/storyaudiobyid.routes"));
 app.use("/api/islamicstoryaudiosbystoryid", require("./routes/storyaudiobystoryid.routes"));
-// 3️⃣ Subscription routes (safe now)
+
+// ✅ Stripe subscription routes
 app.use("/api/subscription", require("./routes/subscription.routes"));
 
+// 4️⃣ Error handler middleware
 app.use(errorHandler);
 
+// 5️⃣ Start server
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`)
-})
+  console.log(`Server running on port ${port}`);
+});

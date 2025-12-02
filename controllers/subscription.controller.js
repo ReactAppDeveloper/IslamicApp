@@ -2,66 +2,64 @@ const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const Subscription = require("../models/Subscription");
 
-// STEP 1 — SetupIntent
-const createSetupIntent = async (req, res) => {
+// ✅ Generate ephemeral key for PaymentSheet
+const createEphemeralKey = async (req, res) => {
   try {
     const { email } = req.body;
 
     // Find or create customer
     let customer;
     const existing = await stripe.customers.list({ email, limit: 1 });
-
     if (existing.data.length > 0) {
       customer = existing.data[0];
     } else {
       customer = await stripe.customers.create({ email });
     }
 
-    // Create SetupIntent
-    const setupIntent = await stripe.setupIntents.create({
-      customer: customer.id,
-      payment_method_types: ["card"],
-    });
+    // Create ephemeral key for PaymentSheet
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: customer.id },
+      { apiVersion: "2025-08-19" } // make sure this matches Stripe SDK version
+    );
 
     res.json({
       customerId: customer.id,
-      clientSecret: setupIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
     });
   } catch (err) {
-    console.log("SetupIntent Error:", err.message);
+    console.log("Ephemeral Key Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
 
-// STEP 2 — Create Subscription
+// ✅ Create subscription
 const createSubscription = async (req, res) => {
   try {
-    const { customerId, priceId, email, paymentMethodId } = req.body;
+    const { customerId, paymentMethodId, priceId } = req.body;
 
-    if (!paymentMethodId) {
-      return res.status(400).json({ error: "Payment method is required" });
-    }
+    if (!paymentMethodId)
+      return res.status(400).json({ error: "PaymentMethod ID is required" });
 
     // Attach payment method to customer
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
 
-    // Set as default payment method
+    // Set as default
     await stripe.customers.update(customerId, {
-      invoice_settings: { default_payment_method: paymentMethodId }
+      invoice_settings: { default_payment_method: paymentMethodId },
     });
 
     // Create subscription
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
-      expand: ['latest_invoice.payment_intent'],
+      expand: ["latest_invoice.payment_intent"],
+      payment_behavior: "default_incomplete",
     });
 
-    // Save or update in DB
+    // Save to DB
     await Subscription.findOneAndUpdate(
       { stripeSubscriptionId: subscription.id },
       {
-        email: email,
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscription.id,
         priceId,
@@ -74,20 +72,20 @@ const createSubscription = async (req, res) => {
 
     res.json({
       subscriptionId: subscription.id,
+      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
       status: subscription.status,
     });
-
   } catch (err) {
     console.log("Subscription Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
 
-// STEP 3 — Webhook
+// ✅ Webhook
 const handleWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
-
   let event;
+
   try {
     event = stripe.webhooks.constructEvent(
       req.body,
@@ -95,34 +93,24 @@ const handleWebhook = async (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.log("Webhook signature error:", err.message);
+    console.log("Webhook Error:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   switch (event.type) {
-    case "invoice.paid": {
-      const invoice = event.data.object;
-
+    case "invoice.paid":
       await Subscription.findOneAndUpdate(
-        { stripeSubscriptionId: invoice.subscription },
-        {
-          status: "active",
-          currentPeriodEnd: invoice.period_end,
-        }
+        { stripeSubscriptionId: event.data.object.subscription },
+        { status: "active", currentPeriodEnd: event.data.object.period_end }
       );
       break;
-    }
-
-    case "invoice.payment_failed": {
-      const invoice = event.data.object;
+    case "invoice.payment_failed":
       await Subscription.findOneAndUpdate(
-        { stripeSubscriptionId: invoice.subscription },
+        { stripeSubscriptionId: event.data.object.subscription },
         { status: "past_due" }
       );
       break;
-    }
-
-    case "customer.subscription.updated": {
+    case "customer.subscription.updated":
       const sub = event.data.object;
       await Subscription.findOneAndUpdate(
         { stripeSubscriptionId: sub.id },
@@ -133,17 +121,13 @@ const handleWebhook = async (req, res) => {
         }
       );
       break;
-    }
-
-    case "customer.subscription.deleted": {
-      const sub = event.data.object;
+    case "customer.subscription.deleted":
+      const deleted = event.data.object;
       await Subscription.findOneAndUpdate(
-        { stripeSubscriptionId: sub.id },
+        { stripeSubscriptionId: deleted.id },
         { status: "canceled" }
       );
       break;
-    }
-
     default:
       console.log("Unhandled event:", event.type);
   }
@@ -152,7 +136,7 @@ const handleWebhook = async (req, res) => {
 };
 
 module.exports = {
-  createSetupIntent,
+  createEphemeralKey,
   createSubscription,
   handleWebhook,
 };
