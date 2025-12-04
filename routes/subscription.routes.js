@@ -1,18 +1,21 @@
 const express = require("express");
 const router = express.Router();
 const {
-  createEphemeralKey,
+  createSetupIntentSession,
   createSubscription,
   handleWebhook,
 } = require("../controllers/subscription.controller");
 
-// Ephemeral Key
-router.post("/ephemeral-key", createEphemeralKey);
+// 1️⃣ Create SetupIntent + Ephemeral Key (initial card setup)
+router.route("/setup-intent").post(createSetupIntentSession);
 
-// Create subscription
-router.post("/create", createSubscription);
+// 2️⃣ Create subscription (after confirming card)
+router.route("/create").post(createSubscription);
 
-// Stripe Webhook
-router.post("/webhook", express.raw({ type: "application/json" }), handleWebhook);
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  handleWebhook
+);
 
 module.exports = router;
