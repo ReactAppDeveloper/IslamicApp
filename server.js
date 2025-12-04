@@ -1,4 +1,3 @@
-// server.js
 const express = require("express");
 const connectDb = require("./config/dbConnection");
 const fileUpload = require("express-fileupload");
@@ -7,32 +6,14 @@ const errorHandler = require("./middleware/errorHandler");
 const cloudinaryConfig = require("./config/cloudinaryConfig");
 const dotenv = require("dotenv").config();
 
-// Connect to MongoDB
 connectDb();
-
-// Configure Cloudinary
 cloudinaryConfig();
 
 const app = express();
 const port = process.env.PORT || 5001;
-
-// ----------------------------
-// 1️⃣ Stripe Webhook MUST be raw BEFORE express.json()
-// ----------------------------
-app.use(
-  "/api/subscription/webhook",
-  express.raw({ type: "application/json" })
-);
-
-// ----------------------------
-// 2️⃣ Normal middlewares AFTER webhook
-// ----------------------------
 app.use(express.json());
 app.use(fileUpload({ createParentPath: true }));
 
-// ----------------------------
-// 3️⃣ App routes
-// ----------------------------
 app.use("/api/surahs", require("./routes/surah.routes"));
 app.use("/api/juzs", require("./routes/juz.routes"));
 app.use("/api/ayahs", require("./routes/ayah.routes"));
@@ -78,19 +59,8 @@ app.use("/api/islamicstoryaudios", require("./routes/storiesaudios.routes"));
 app.use("/api/islamicstoryaudiosbyid", require("./routes/storyaudiobyid.routes"));
 app.use("/api/islamicstoryaudiosbystoryid", require("./routes/storyaudiobystoryid.routes"));
 
-// ----------------------------
-// ✅ Stripe subscription routes
-// ----------------------------
-app.use("/api/subscription", require("./routes/subscription.routes"));
-
-// ----------------------------
-// 4️⃣ Error handler middleware
-// ----------------------------
 app.use(errorHandler);
 
-// ----------------------------
-// 5️⃣ Start server
-// ----------------------------
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

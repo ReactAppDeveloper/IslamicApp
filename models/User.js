@@ -10,16 +10,14 @@ const userSchema = new mongoose.Schema(
     resetTokenExpiry: Date,
     otp: String,
     otpExpiry: Date,
-
-    // Subscription-related fields
     isSubscriber: { type: Boolean, default: false },
     planType: { type: String, enum: ["monthly", "yearly"], default: "monthly" },
     stripeCustomerId: { type: String },
     subscriptionId: { type: String },
-    currentPeriodEnd: { type: Number }, // timestamp in seconds
+    currentPeriodEnd: { type: Number },
   },
-  { timestamps: true } // auto-manages createdAt and updatedAt
+  { timestamps: true }
 );
 
-// ✅ Avoid OverwriteModelError
+// ✅ Check if model exists to avoid OverwriteModelError
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);
