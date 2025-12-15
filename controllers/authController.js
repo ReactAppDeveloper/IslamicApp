@@ -38,7 +38,12 @@ exports.signup = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Account created. OTP sent to your email.",
-      requiresVerification: true
+      requiresVerification: true,
+      user: {
+      _id: user._id, 
+      name: user.name,
+      email: user.email
+  }
     });
 
   } catch (err) {
@@ -135,7 +140,8 @@ exports.sendOtp = async (req, res) => {
 
     await sendEmail(email, 'Your OTP Code', `Your OTP is: ${otp}`);
 
-    res.json({ message: 'OTP sent to email' });
+    res.status(201).json({
+      success: true,message: 'OTP sent to email' });
   } catch (err) {
     console.error('❌ Send OTP error:', err);
     res.status(500).json({ error: 'Failed to send OTP' });
@@ -158,7 +164,8 @@ exports.resetPasswordWithOtp = async (req, res) => {
 
     await user.save();
 
-    res.json({ message: 'Password updated successfully' });
+    res.status(201).json({
+      success: true,message: 'Password updated successfully' });
   } catch (err) {
     console.error('❌ Reset password error:', err);
     res.status(500).json({ error: 'Failed to reset password' });
@@ -185,7 +192,8 @@ exports.verifyOtp = async (req, res) => {
     user.otpExpiry = undefined;
     await user.save();
 
-    res.json({ success: true, message: "Email verified successfully" });
+    // ✅ Return user object
+    res.json({ success: true, message: "Email verified successfully", user });
 
   } catch (err) {
     console.error("Verify OTP error:", err);
