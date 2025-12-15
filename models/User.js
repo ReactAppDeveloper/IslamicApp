@@ -14,10 +14,11 @@ const userSchema = new mongoose.Schema(
     planType: { type: String, enum: ["monthly", "yearly"], default: "monthly" },
     stripeCustomerId: { type: String },
     subscriptionId: { type: String },
+    subscriptionStatus: { type: String, default: "inactive" },
     currentPeriodEnd: { type: Number },
+    lastPaymentAmount: { type: Number },
   },
   { timestamps: true }
 );
 
-// ✅ Check if model exists to avoid OverwriteModelError
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

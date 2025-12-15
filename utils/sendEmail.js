@@ -1,12 +1,12 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const sendEmail = async (to, subject, text) => {
+const sendEmail = async (to, subject, content, isHtml = false) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com", // smtp.gmail.com
-      port: "587", // 587
-      secure: false, // TLS
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
         user: "mwaqas@waiiz.com",
         pass: "decxetvmkxhbcope",
@@ -14,10 +14,11 @@ const sendEmail = async (to, subject, text) => {
     });
 
     const mailOptions = {
-      from: `"Wasil App" <"mwaqas@waiiz.com">`,
+      from: `"Wasil App" <"mwaqas@waiiz.com"}>`,
       to,
       subject,
-      text,
+      // Use HTML if isHtml=true, otherwise use plain text
+      [isHtml ? "html" : "text"]: content,
     };
 
     const info = await transporter.sendMail(mailOptions);
