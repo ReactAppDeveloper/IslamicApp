@@ -172,33 +172,39 @@ exports.webhook = async (req, res) => {
   user.isSubscriber = true;
   user.subscriptionStatus = "active";
 
-  let periodStart = null;
-  let periodEnd = null;
+ 
+  // ✅ FIX: get period end from subscription
+  if (invoice.subscription) {
+    const subscription = await stripe.subscriptions.retrieve(
+      invoice.subscription
+    );
 
-  // ✅ Use invoice period fields if available
-  if (invoice.current_period_start && invoice.current_period_end) {
-    periodStart = new Date(invoice.current_period_start * 1000);
-    periodEnd = new Date(invoice.current_period_end * 1000);
-    user.currentPeriodEnd = invoice.current_period_end; // Save in DB
+    user.currentPeriodEnd = subscription.current_period_end;
   }
 
-  // Retrieve subscription for plan type and subscription ID
+  // plan type (unchanged)
   if (invoice.subscription) {
-    const subscription = await stripe.subscriptions.retrieve(invoice.subscription, {
-      expand: ["items.data.plan"]
-    });
+    const subscription = await stripe.subscriptions.retrieve(
+      invoice.subscription,
+      { expand: ["items.data.plan"] }
+    );
+
     const item = subscription.items.data[0];
-    user.planType = item?.plan?.interval === "year" ? "yearly" : "monthly";
+    user.planType =
+      item?.plan?.interval === "year" ? "yearly" : "monthly";
     user.subscriptionId = subscription.id;
   }
 
-  // ✅ Update last payment amount
+  // last payment (unchanged)
   if (invoice.amount_paid) {
-    user.lastPaymentAmount = invoice.amount_paid; // in cents
+    user.lastPaymentAmount = invoice.amount_paid;
   }
 
   await user.save();
-  console.log('User currentPeriodEnd from invoice:', user.currentPeriodEnd);
+ console.log(
+    "✅ currentPeriodEnd saved:",
+    user.currentPeriodEnd
+  );
 
   // ✅ Send invoice email if available
   if (invoice.hosted_invoice_url) {
