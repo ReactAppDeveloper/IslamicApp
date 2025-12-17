@@ -155,7 +155,11 @@ exports.webhook = async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
   } catch (err) {
     console.error("Webhook signature failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -163,105 +167,95 @@ exports.webhook = async (req, res) => {
 
   try {
     switch (event.type) {
-     case "invoice.payment_succeeded": {
-  const invoice = event.data.object;
-  const user = await User.findOne({ stripeCustomerId: invoice.customer });
-  if (!user) break;
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object;
+        const user = await User.findOne({ stripeCustomerId: invoice.customer });
+        if (!user) break;
 
-  // Mark user as active subscriber
-  user.isSubscriber = true;
-  user.subscriptionStatus = "active";
+        user.isSubscriber = true;
+        user.subscriptionStatus = "active";
 
- 
-  // ✅ FIX: get period end from subscription
-  if (invoice.subscription) {
-    const subscription = await stripe.subscriptions.retrieve(
-      invoice.subscription
-    );
+        let periodStart = null;
+        let periodEnd = null;
 
-    user.currentPeriodEnd = subscription.current_period_end;
-  }
-
-  // plan type (unchanged)
-  if (invoice.subscription) {
-    const subscription = await stripe.subscriptions.retrieve(
-      invoice.subscription,
-      { expand: ["items.data.plan"] }
-    );
-
-    const item = subscription.items.data[0];
-    user.planType =
-      item?.plan?.interval === "year" ? "yearly" : "monthly";
-    user.subscriptionId = subscription.id;
-  }
-
-  // last payment (unchanged)
-  if (invoice.amount_paid) {
-    user.lastPaymentAmount = invoice.amount_paid;
-  }
-
-  await user.save();
- console.log(
-    "✅ currentPeriodEnd saved:",
-    user.currentPeriodEnd
+        if (invoice.subscription) {
+  const subscription = await stripe.subscriptions.retrieve(
+    invoice.subscription,
+    { expand: ["items.data.plan"] }
   );
 
-  // ✅ Send invoice email if available
-  if (invoice.hosted_invoice_url) {
-    const amountPaid = (invoice.amount_paid / 100).toFixed(2);
-    const currency = invoice.currency.toUpperCase();
-    const invoiceUrl = invoice.hosted_invoice_url;
+  user.currentPeriodEnd = subscription.current_period_end;
 
-    const emailHtml = `
-      <div style="font-family:Arial,sans-serif; background:#f5f5f5; padding:20px;">
-        <div style="max-width:600px; margin:0 auto; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-          <div style="background:#DAA520; padding:20px; text-align:center; color:#fff;">
-            <h2 style="margin:0;">Wasil App</h2>
-            <p style="margin:0; font-size:16px;">Subscription Invoice</p>
-          </div>
-          <div style="padding:25px;">
-            <p>Assalamu Alaikum <strong>${user.name}</strong>,</p>
-            <p>Your subscription payment has been successfully received.</p>
-            <table style="width:100%; margin-top:15px; border-collapse:collapse;">
-              <tr>
-                <td style="padding:10px; border:1px solid #ddd;"><strong>Amount Paid</strong></td>
-                <td style="padding:10px; border:1px solid #ddd;">${amountPaid} ${currency}</td>
-              </tr>
-              <tr>
-                <td style="padding:10px; border:1px solid #ddd;"><strong>Plan</strong></td>
-                <td style="padding:10px; border:1px solid #ddd; text-transform:capitalize;">Subscription ${user.planType || "N/A"}</td>
-              </tr>
-              ${
-                periodStart && periodEnd
-                  ? `<tr>
-                      <td style="padding:10px; border:1px solid #ddd;"><strong>Subscription Period</strong></td>
-                      <td style="padding:10px; border:1px solid #ddd;">${periodStart.toLocaleDateString()} - ${periodEnd.toLocaleDateString()}</td>
-                    </tr>`
-                  : ""
-              }
-            </table>
-            <div style="margin-top:20px; text-align:center;">
-              <a href="${invoiceUrl}" style="background:#DAA520; color:white; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold; display:inline-block;">
-                Download Invoice
-              </a>
-            </div>
-            <p style="margin-top:25px;">Thank you for supporting Wasil App.</p>
-            <p style="margin-top:20px; font-size:13px; color:#666;">If you have any questions, contact support.</p>
-          </div>
-          <div style="background:#f0f0f0; padding:15px; text-align:center; font-size:12px; color:#777;">
-            © ${new Date().getFullYear()} Wasil App — All Rights Reserved.
-          </div>
-        </div>
-      </div>
-    `;
+  periodStart = new Date(subscription.current_period_start * 1000);
+  periodEnd = new Date(subscription.current_period_end * 1000);
 
-    await sendEmail(user.email, "Wasil App – Your Subscription Invoice", emailHtml, true);
-    console.log("📧 Invoice sent to:", user.email);
-  }
-
-  break;
+  user.subscriptionId = subscription.id;
+  const item = subscription.items.data[0];
+  user.planType = item?.plan?.interval === "year" ? "yearly" : "monthly";
 }
 
+        if (invoice.amount_paid) {
+          user.lastPaymentAmount = invoice.amount_paid; 
+        }
+
+        await user.save();
+        console.log("✅ currentPeriodEnd saved:", user.currentPeriodEnd);
+
+        // Send invoice email if available
+        if (invoice.hosted_invoice_url) {
+          const amountPaid = (invoice.amount_paid / 100).toFixed(2);
+          const currency = invoice.currency.toUpperCase();
+          const invoiceUrl = invoice.hosted_invoice_url;
+
+          const emailHtml = `
+            <div style="font-family:Arial,sans-serif; background:#f5f5f5; padding:20px;">
+              <div style="max-width:600px; margin:0 auto; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
+                <div style="background:#DAA520; padding:20px; text-align:center; color:#fff;">
+                  <h2 style="margin:0;">Wasil App</h2>
+                  <p style="margin:0; font-size:16px;">Subscription Invoice</p>
+                </div>
+                <div style="padding:25px;">
+                  <p>Assalamu Alaikum <strong>${user.name}</strong>,</p>
+                  <p>Your subscription payment has been successfully received.</p>
+                  <table style="width:100%; margin-top:15px; border-collapse:collapse;">
+                    <tr>
+                      <td style="padding:10px; border:1px solid #ddd;"><strong>Amount Paid</strong></td>
+                      <td style="padding:10px; border:1px solid #ddd;">${amountPaid} ${currency}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:10px; border:1px solid #ddd;"><strong>Plan</strong></td>
+                      <td style="padding:10px; border:1px solid #ddd; text-transform:capitalize;">Subscription ${user.planType || "N/A"}</td>
+                    </tr>
+                    ${
+                      periodStart && periodEnd
+                        ? `<tr>
+                            <td style="padding:10px; border:1px solid #ddd;"><strong>Subscription Period</strong></td>
+                            <td style="padding:10px; border:1px solid #ddd;">${periodStart.toLocaleDateString()} - ${periodEnd.toLocaleDateString()}</td>
+                          </tr>`
+                        : ""
+                    }
+                  </table>
+                  <div style="margin-top:20px; text-align:center;">
+                    <a href="${invoiceUrl}" style="background:#DAA520; color:white; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold; display:inline-block;">
+                      Download Invoice
+                    </a>
+                  </div>
+                  <p style="margin-top:25px;">Thank you for supporting Wasil App.</p>
+                  <p style="margin-top:20px; font-size:13px; color:#666;">If you have any questions, contact support.</p>
+                </div>
+                <div style="background:#f0f0f0; padding:15px; text-align:center; font-size:12px; color:#777;">
+                  © ${new Date().getFullYear()} Wasil App — All Rights Reserved.
+                </div>
+              </div>
+            </div>
+          `;
+
+          await sendEmail(user.email, "Wasil App – Your Subscription Invoice", emailHtml, true);
+          console.log("📧 Invoice sent to:", user.email);
+        }
+
+        break;
+      }
       case "invoice.payment_failed": {
         const invoice = event.data.object;
         const user = await User.findOne({ stripeCustomerId: invoice.customer });
@@ -271,21 +265,46 @@ exports.webhook = async (req, res) => {
         }
         break;
       }
-
       case "customer.subscription.deleted": {
         const sub = event.data.object;
         const user = await User.findOne({ stripeCustomerId: sub.customer });
         if (user) {
           user.isSubscriber = false;
           user.subscriptionStatus = "canceled";
-          user.currentPeriodEnd = sub.current_period_end;
+          user.currentPeriodEnd = sub.current_period_end || null;
           await user.save();
         }
         break;
       }
+      case "customer.subscription.updated": {
+  const sub = event.data.object;
 
+  const user = await User.findOne({
+    stripeCustomerId: sub.customer
+  });
+  if (!user) break;
+
+  // 🔥 THIS is where Stripe finally sets the period
+  user.currentPeriodEnd = sub.current_period_end;
+  user.subscriptionStatus = sub.status;
+  user.isSubscriber = sub.status === "active";
+
+  // Optional safety (keep your existing values if already set)
+  if (!user.subscriptionId) {
+    user.subscriptionId = sub.id;
+  }
+
+  await user.save();
+
+  console.log(
+    "🔥 PERIOD CONFIRMED:",
+    sub.current_period_end
+  );
+
+  break;
+      }
       default:
-        console.log(`⚠ Unhandled event type ${event.type}`);
+      break;
     }
 
     res.sendStatus(200);
