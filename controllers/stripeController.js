@@ -10,9 +10,6 @@ const PRICE_IDS = {
   yearly: process.env.PRICE_YEARLY_ID,
 };
 
-// ----------------------------
-// Create SetupIntent for PaymentSheet
-// ----------------------------
 exports.createMobileSubscription = async (req, res) => {
   try {
     const { email, plan } = req.body;
@@ -64,9 +61,6 @@ exports.createMobileSubscription = async (req, res) => {
   }
 };
 
-// ----------------------------
-// Retrieve SetupIntent to get payment method ID
-// ----------------------------
 exports.retrieveSetupIntent = async (req, res) => {
   try {
     const { clientSecret } = req.body;
@@ -85,9 +79,6 @@ exports.retrieveSetupIntent = async (req, res) => {
   }
 };
 
-// ----------------------------
-// Complete subscription after card is attached
-// ----------------------------
 exports.completeSubscription = async (req, res) => {
   try {
     const { email, priceId, paymentMethodId } = req.body;
@@ -113,10 +104,8 @@ exports.completeSubscription = async (req, res) => {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
 
-    // Retrieve PaymentMethod to get billing details
     const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
 
-    // Update Stripe customer with billing info (optional but dashboard-friendly)
     await stripe.customers.update(user.stripeCustomerId, {
       name: pm.billing_details.name || user.name,
       phone: pm.billing_details.phone || undefined,
@@ -132,23 +121,35 @@ exports.completeSubscription = async (req, res) => {
       payment_behavior: "allow_incomplete",
     });
 
-    // Update local user record
+    const paymentIntent = subscription.latest_invoice?.payment_intent;
+    const isPaid = paymentIntent && paymentIntent.status === "succeeded";
+
+    // Save minimal info now; full period info will come from webhook
     user.subscriptionId = subscription.id;
-    user.isSubscriber = true;
-    user.subscriptionStatus = subscription.status;
+    user.isSubscriber = isPaid;
+    user.subscriptionStatus = isPaid ? "active" : subscription.status;
     user.planType = priceId === PRICE_IDS.yearly ? "yearly" : "monthly";
-    user.currentPeriodEnd = subscription.current_period_end;
+    user.lastPaymentAmount = paymentIntent?.amount_received || 0;
+
+    // currentPeriodEnd is unknown until payment succeeds
+    user.currentPeriodEnd = null;
+
     await user.save();
 
-    res.json({ success: true, subscription });
+    console.log('Subscription created:', subscription.id);
+
+    res.json({
+      success: true,
+      isSubscriber: user.isSubscriber,
+      subscriptionStatus: user.subscriptionStatus,
+      currentPeriodEnd: user.currentPeriodEnd, // null for now, updated by webhook
+    });
   } catch (err) {
     console.error("Complete Subscription Error:", err);
     res.status(500).json({ message: "Subscription creation failed" });
   }
 };
-// ----------------------------
-// Stripe webhook
-// ----------------------------
+
 exports.webhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
   let event;
@@ -162,85 +163,98 @@ exports.webhook = async (req, res) => {
 
   try {
     switch (event.type) {
-      case "invoice.payment_succeeded": {
-        const invoice = event.data.object;
-        const user = await User.findOne({ stripeCustomerId: invoice.customer });
-        if (!user) break;
+     case "invoice.payment_succeeded": {
+  const invoice = event.data.object;
+  const user = await User.findOne({ stripeCustomerId: invoice.customer });
+  if (!user) break;
 
-        user.isSubscriber = true;
-        user.subscriptionStatus = "active";
+  // Mark user as active subscriber
+  user.isSubscriber = true;
+  user.subscriptionStatus = "active";
 
-        let subscription = null;
-        let periodStart = null;
-        let periodEnd = null;
+  let periodStart = null;
+  let periodEnd = null;
 
-        if (invoice.subscription) {
-          subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-          const item = subscription.items.data[0];
-          user.planType = item.plan.interval === "year" ? "yearly" : "monthly";
-          user.subscriptionId = subscription.id;
-          user.currentPeriodEnd = subscription.current_period_end;
-          periodStart = new Date(subscription.current_period_start * 1000);
-          periodEnd = new Date(subscription.current_period_end * 1000);
-        }
+  // ✅ Use invoice period fields if available
+  if (invoice.current_period_start && invoice.current_period_end) {
+    periodStart = new Date(invoice.current_period_start * 1000);
+    periodEnd = new Date(invoice.current_period_end * 1000);
+    user.currentPeriodEnd = invoice.current_period_end; // Save in DB
+  }
 
-        await user.save();
+  // Retrieve subscription for plan type and subscription ID
+  if (invoice.subscription) {
+    const subscription = await stripe.subscriptions.retrieve(invoice.subscription, {
+      expand: ["items.data.plan"]
+    });
+    const item = subscription.items.data[0];
+    user.planType = item?.plan?.interval === "year" ? "yearly" : "monthly";
+    user.subscriptionId = subscription.id;
+  }
 
-        // Send invoice email if invoice has hosted_invoice_url
-        if (invoice.hosted_invoice_url) {
-          const amountPaid = (invoice.amount_paid / 100).toFixed(2);
-          const currency = invoice.currency.toUpperCase();
-          const invoiceUrl = invoice.hosted_invoice_url;
+  // ✅ Update last payment amount
+  if (invoice.amount_paid) {
+    user.lastPaymentAmount = invoice.amount_paid; // in cents
+  }
 
-          const emailHtml = `
-            <div style="font-family:Arial,sans-serif; background:#f5f5f5; padding:20px;">
-              <div style="max-width:600px; margin:0 auto; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-                <div style="background:#DAA520; padding:20px; text-align:center; color:#fff;">
-                  <h2 style="margin:0;">Wasil App</h2>
-                  <p style="margin:0; font-size:16px;">Subscription Invoice</p>
-                </div>
-                <div style="padding:25px;">
-                  <p>Assalamu Alaikum <strong>${user.name}</strong>,</p>
-                  <p>Your subscription payment has been successfully received.</p>
-                  <table style="width:100%; margin-top:15px; border-collapse:collapse;">
-                    <tr>
-                      <td style="padding:10px; border:1px solid #ddd;"><strong>Amount Paid</strong></td>
-                      <td style="padding:10px; border:1px solid #ddd;">${amountPaid} ${currency}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:10px; border:1px solid #ddd;"><strong>Plan</strong></td>
-                      <td style="padding:10px; border:1px solid #ddd; text-transform:capitalize;">Subscription ${user.planType || "N/A"}</td>
-                    </tr>
-                    ${
-                      periodStart && periodEnd
-                        ? `<tr>
-                            <td style="padding:10px; border:1px solid #ddd;"><strong>Subscription Period</strong></td>
-                            <td style="padding:10px; border:1px solid #ddd;">${periodStart.toLocaleDateString()} - ${periodEnd.toLocaleDateString()}</td>
-                          </tr>`
-                        : ""
-                    }
-                  </table>
-                  <div style="margin-top:20px; text-align:center;">
-                    <a href="${invoiceUrl}" style="background:#DAA520; color:white; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold; display:inline-block;">
-                      Download Invoice
-                    </a>
-                  </div>
-                  <p style="margin-top:25px;">Thank you for supporting Wasil App.</p>
-                  <p style="margin-top:20px; font-size:13px; color:#666;">If you have any questions, contact support.</p>
-                </div>
-                <div style="background:#f0f0f0; padding:15px; text-align:center; font-size:12px; color:#777;">
-                  © ${new Date().getFullYear()} Wasil App — All Rights Reserved.
-                </div>
-              </div>
+  await user.save();
+  console.log('User currentPeriodEnd from invoice:', user.currentPeriodEnd);
+
+  // ✅ Send invoice email if available
+  if (invoice.hosted_invoice_url) {
+    const amountPaid = (invoice.amount_paid / 100).toFixed(2);
+    const currency = invoice.currency.toUpperCase();
+    const invoiceUrl = invoice.hosted_invoice_url;
+
+    const emailHtml = `
+      <div style="font-family:Arial,sans-serif; background:#f5f5f5; padding:20px;">
+        <div style="max-width:600px; margin:0 auto; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
+          <div style="background:#DAA520; padding:20px; text-align:center; color:#fff;">
+            <h2 style="margin:0;">Wasil App</h2>
+            <p style="margin:0; font-size:16px;">Subscription Invoice</p>
+          </div>
+          <div style="padding:25px;">
+            <p>Assalamu Alaikum <strong>${user.name}</strong>,</p>
+            <p>Your subscription payment has been successfully received.</p>
+            <table style="width:100%; margin-top:15px; border-collapse:collapse;">
+              <tr>
+                <td style="padding:10px; border:1px solid #ddd;"><strong>Amount Paid</strong></td>
+                <td style="padding:10px; border:1px solid #ddd;">${amountPaid} ${currency}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px; border:1px solid #ddd;"><strong>Plan</strong></td>
+                <td style="padding:10px; border:1px solid #ddd; text-transform:capitalize;">Subscription ${user.planType || "N/A"}</td>
+              </tr>
+              ${
+                periodStart && periodEnd
+                  ? `<tr>
+                      <td style="padding:10px; border:1px solid #ddd;"><strong>Subscription Period</strong></td>
+                      <td style="padding:10px; border:1px solid #ddd;">${periodStart.toLocaleDateString()} - ${periodEnd.toLocaleDateString()}</td>
+                    </tr>`
+                  : ""
+              }
+            </table>
+            <div style="margin-top:20px; text-align:center;">
+              <a href="${invoiceUrl}" style="background:#DAA520; color:white; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold; display:inline-block;">
+                Download Invoice
+              </a>
             </div>
-          `;
+            <p style="margin-top:25px;">Thank you for supporting Wasil App.</p>
+            <p style="margin-top:20px; font-size:13px; color:#666;">If you have any questions, contact support.</p>
+          </div>
+          <div style="background:#f0f0f0; padding:15px; text-align:center; font-size:12px; color:#777;">
+            © ${new Date().getFullYear()} Wasil App — All Rights Reserved.
+          </div>
+        </div>
+      </div>
+    `;
 
-          await sendEmail(user.email, "Wasil App – Your Subscription Invoice", emailHtml, true);
-          console.log("📧 Invoice sent to:", user.email);
-        }
+    await sendEmail(user.email, "Wasil App – Your Subscription Invoice", emailHtml, true);
+    console.log("📧 Invoice sent to:", user.email);
+  }
 
-        break;
-      }
+  break;
+}
 
       case "invoice.payment_failed": {
         const invoice = event.data.object;
@@ -275,9 +289,6 @@ exports.webhook = async (req, res) => {
   }
 };
 
-// ----------------------------
-// Cancel subscription
-// ----------------------------
 exports.cancelSubscription = async (req, res) => {
   try {
     const { subscriptionId } = req.body;
@@ -288,5 +299,46 @@ exports.cancelSubscription = async (req, res) => {
   } catch (err) {
     console.error("Cancel subscription error:", err);
     res.status(500).json({ message: "Failed to cancel subscription" });
+  }
+};
+
+exports.checkSubscriptionByEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+
+    const isActiveSubscriber =
+      user.isSubscriber === true &&
+      user.subscriptionStatus === "active" &&
+      user.currentPeriodEnd &&
+      user.currentPeriodEnd > now;
+
+    if (!isActiveSubscriber && user.isSubscriber === true) {
+      user.isSubscriber = false;
+      user.subscriptionStatus = "expired";
+      await user.save();
+    }
+
+    return res.json({
+      success: true,
+      isSubscriber: isActiveSubscriber,
+      planType: isActiveSubscriber ? user.planType : null,
+      subscriptionStatus: isActiveSubscriber ? "active" : "inactive",
+    });
+  } catch (err) {
+    console.error("Check subscription error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to check subscription",
+    });
   }
 };
