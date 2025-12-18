@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
     stripeCustomerId: { type: String },
     subscriptionId: { type: String },
     subscriptionStatus: { type: String, default: "inactive" },
-    currentPeriodEnd: { type: Number },
+    currentPeriodEnd: {type: Date,default: null},
     lastPaymentAmount: { type: Number },
   },
   { timestamps: true }
