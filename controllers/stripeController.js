@@ -196,6 +196,9 @@ exports.webhook = async (req, res) => {
       // 🔥🔥 THIS WAS MISSING
       user.currentPeriodEnd = periodEnd;
       user.planType = planType;
+       if (invoice.amount_paid) {
+          user.lastPaymentAmount = invoice.amount_paid; 
+       }
 
       if (!user.subscriptionId) {
         user.subscriptionId = subscription.id;
