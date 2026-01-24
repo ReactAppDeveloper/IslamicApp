@@ -6,8 +6,15 @@ const mongoose = require("mongoose");
 //@access private
 const getDuas= asyncHandler(async (req, res) => {
   const duas = await Duas.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(duas);
+});
+
+const getDuasByCategoryID = asyncHandler(async (req, res) => {
+  const duascategory = await Duas.find({ duacategoryId: new mongoose.Types.ObjectId(req.query.duacategoryId) })
+    .skip(parseInt(req.query.start))
+    .limit(parseInt(req.query.limit));
+  res.status(200).json(duascategory);
 });
 
 const getindDuas = asyncHandler(async (req, res) => {
@@ -42,6 +49,7 @@ const DeleteDuas = asyncHandler(async (req, res) => {
 });
 module.exports = {
   getDuas,
+  getDuasByCategoryID,
   getindDuas,
   CreateDuas,
   UpdateDuas,

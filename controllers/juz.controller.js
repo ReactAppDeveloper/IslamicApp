@@ -6,7 +6,7 @@ const Juz = require("../models/juz");
 //@access private
 const getJuzs = asyncHandler(async (req, res) => {
   const juzs = await Juz.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(juzs);
 });
 

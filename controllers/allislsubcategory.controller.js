@@ -3,7 +3,7 @@ const IslSubCategory = require("../models/islsubcategory");
 
 const getAllIslSubCategory= asyncHandler(async (req, res) => {
   const allIslsubcategory = await IslSubCategory.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(allIslsubcategory);
 });
 

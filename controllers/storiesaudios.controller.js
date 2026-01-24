@@ -4,7 +4,7 @@ const StoriesAudios = require("../models/storiesaudios");
 
 const getAllIslamicStoryAudios = asyncHandler(async (req, res) => {
   const allislamicstoryaudios = await StoriesAudios.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(allislamicstoryaudios);
 });
 

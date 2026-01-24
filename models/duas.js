@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 
 const duasSchema = mongoose.Schema(
     {
+      duacategoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: "duacategories",
+      },
       duanameenglish: {
         type: String,
         required: [true],
@@ -10,9 +15,7 @@ const duasSchema = mongoose.Schema(
         type: String,
         required: [true],
       },
-      duaID:{
-        type:String
-      }
+      
     },
     {
       timestamps: true,

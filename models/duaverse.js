@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 
 const duaversesSchema = mongoose.Schema(
     {
-     
+      duacategoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: "duacategories",
+      },
       duanameenglish: {
         type: String,
         required: [true],

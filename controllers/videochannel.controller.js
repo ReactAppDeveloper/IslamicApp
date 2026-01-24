@@ -5,7 +5,7 @@ const Videochannel = require("../models/videochannel");
 //@access private
 const getVideochannels= asyncHandler(async (req, res) => {
   const videochannels = await Videochannel.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(videochannels);
 });
 

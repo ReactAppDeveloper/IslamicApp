@@ -6,7 +6,7 @@ const Hadeesbooks = require("../models/hadeesbooks");
 
 const getHadeesbooks= asyncHandler(async (req, res) => {
   const hadeesbooks = await Hadeesbooks.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(hadeesbooks);
 });
 
