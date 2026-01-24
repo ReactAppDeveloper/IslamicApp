@@ -4,7 +4,7 @@ const Duaverse = require("../models/duaverse");
 
 const getAllDuasVerses= asyncHandler(async (req, res) => {
   const allduasverses = await Duaverse.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(allduasverses);
 });
 const getDuaverses = asyncHandler(async (req, res) => {
@@ -20,6 +20,12 @@ const getDuaverses = asyncHandler(async (req, res) => {
       message: "Please Enter Dua Name",
     });
   }
+});
+const getDuaVersesByCategoryID = asyncHandler(async (req, res) => {
+  const duaversescategory = await Duaverse.find({ duacategoryId: new mongoose.Types.ObjectId(req.query.duacategoryId) })
+    .skip(parseInt(req.query.start))
+    .limit(parseInt(req.query.limit));
+  res.status(200).json(duaversescategory);
 });
 const getindDuasVerses = asyncHandler(async (req, res) => {
   const duaverse = await Duaverse.find(new mongoose.Types.ObjectId(req.params.id))
@@ -54,6 +60,7 @@ const DeleteDuasverse = asyncHandler(async (req, res) => {
 module.exports = {
   getAllDuasVerses,
   getDuaverses,
+  getDuaVersesByCategoryID,
   CreateDuasVerses,
   UpdateDuasVerses,
   DeleteDuasverse,

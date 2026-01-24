@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 const getIslamicCategory = asyncHandler(async (req, res) => {
   const islamiccategory = await IslamicCategory.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(islamiccategory);
 });
 

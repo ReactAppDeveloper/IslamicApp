@@ -5,7 +5,7 @@ const Tasbhiverse = require("../models/tasbihverse");
 //@access private
 const getAllTasbihsVerses= asyncHandler(async (req, res) => {
   const alltasbihsverses = await Tasbhiverse.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(alltasbihsverses);
 });
 const getTasbhiverses = asyncHandler(async (req, res) => {

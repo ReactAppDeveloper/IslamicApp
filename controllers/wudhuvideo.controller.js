@@ -3,7 +3,7 @@ const WudhuVideo = require("../models/wudhuvideo");
 
 const getWudhuVideos= asyncHandler(async (req, res) => {
   const wudhuvideos = await WudhuVideo.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(wudhuvideos);
 });
 

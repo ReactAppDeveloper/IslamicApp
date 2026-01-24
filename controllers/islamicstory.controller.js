@@ -4,7 +4,7 @@ const IslamicStory = require("../models/islamicstory");
 
 const getAllIslamicStory= asyncHandler(async (req, res) => {
   const allislamicstory = await IslamicStory.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(allislamicstory);
 });
 

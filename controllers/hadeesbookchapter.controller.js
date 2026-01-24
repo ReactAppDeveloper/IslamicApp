@@ -9,7 +9,7 @@ const getHadeesbookchapters = asyncHandler(async (req, res) => {
   if (req.query.bookSlug) {
     const hadeesbookchapters = await Hadeesbookchapter.find({
       bookSlug: req.query.bookSlug,
-    }).sort({ id: 1 });
+    }).sort({ _id: 1 });
     res.status(200).json(hadeesbookchapters);
   }
    else {

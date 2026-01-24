@@ -4,7 +4,7 @@ const Reel = require("../models/reel");
 
 const getAllReel= asyncHandler(async (req, res) => {
   const allreel = await Reel.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(allreel);
 });
 const CreateReel= asyncHandler(async (req, res) => {

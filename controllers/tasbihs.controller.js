@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 //@access private
 const getTasbihs= asyncHandler(async (req, res) => {
   const tasbihs = await Tasbihs.find()
-    .sort({ id: 1 });
+    .sort({ _id: 1 });
   res.status(200).json(tasbihs);
 });
 
