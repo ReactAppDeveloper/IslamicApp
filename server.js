@@ -55,6 +55,8 @@ app.use("/api/ramadancalender", require("./routes/ramadancalender.routes"));
 app.use("/api/ramadantime", require("./routes/ramadantime.routes"));
 app.use("/api/wudhuvideos", require("./routes/wudhuvideo.routes"));
 app.use("/api/homedua", require("./routes/homedua.routes"));
+app.use("/api/quranicduas", require("./routes/quranicdua.routes"));
+app.use("/api/ramazanduas", require("./routes/ramazandua.routes"));
 app.use("/api/reels", require("./routes/reel.routes"));
 app.use("/api/reelsbyid", require("./routes/reelbyid.routes"));
 app.use("/api/auth", require("./routes/auth.routes"));
