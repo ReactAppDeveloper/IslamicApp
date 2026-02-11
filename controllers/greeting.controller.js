@@ -3,9 +3,12 @@ const Greeting = require("../models/greeting");
 const mongoose = require("mongoose");
 const cloudinary = require('cloudinary').v2;
 
-//@desc Get all greetings
-//@route GET /api/greetings
-//@access private
+
+const getAllGreetings= asyncHandler(async (req, res) => {
+  const greetings = await Greeting.find()
+    .sort({ _id: 1 });
+  res.status(200).json(greetings);
+});
 const getGreetings = asyncHandler(async (req, res) => {
   const greetings = await Greeting.find({ categoryId: new mongoose.Types.ObjectId(req.query.categoryId) })
     .skip(parseInt(req.query.start))
@@ -13,9 +16,6 @@ const getGreetings = asyncHandler(async (req, res) => {
   res.status(200).json(greetings);
 });
 
-//@desc Create New greeting
-//@route POST /api/greetings
-//@access private
 const createGreetings = asyncHandler(async (req, res) => {
   const { categoryId } = req.body;
   if (!categoryId) {
@@ -45,6 +45,7 @@ const createGreetings = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getAllGreetings,
   getGreetings,
   createGreetings
 };
