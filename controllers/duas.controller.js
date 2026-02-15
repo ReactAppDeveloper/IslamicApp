@@ -1,9 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const Duas = require("../models/duas");
 const mongoose = require("mongoose");
-//@desc Get all Hadees books
-//@route GET /api/hadeesbooks
-//@access private
+
 const getDuas= asyncHandler(async (req, res) => {
   const duas = await Duas.find()
     .sort({ _id: 1 });
@@ -12,8 +10,7 @@ const getDuas= asyncHandler(async (req, res) => {
 
 const getDuasByCategoryID = asyncHandler(async (req, res) => {
   const duascategory = await Duas.find({ duacategoryId: new mongoose.Types.ObjectId(req.query.duacategoryId) })
-    .skip(parseInt(req.query.start))
-    .limit(parseInt(req.query.limit));
+    .sort({ _id: 1 });
   res.status(200).json(duascategory);
 });
 

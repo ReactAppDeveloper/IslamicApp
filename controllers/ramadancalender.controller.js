@@ -4,8 +4,7 @@ const RamadanCalender = require("../models/ramadancalender");
 
 const getRamadanCalenders = asyncHandler(async (req, res) => {
     const ramadancalenders = await RamadanCalender.find()
-      .skip(parseInt(req.query.start))
-      .limit(parseInt(req.query.limit));
+       .sort({ _id: 1 });
     res.status(200).json(ramadancalenders);
 });
 module.exports = {

@@ -11,8 +11,7 @@ const getAllGreetings= asyncHandler(async (req, res) => {
 });
 const getGreetings = asyncHandler(async (req, res) => {
   const greetings = await Greeting.find({ categoryId: new mongoose.Types.ObjectId(req.query.categoryId) })
-    .skip(parseInt(req.query.start))
-    .limit(parseInt(req.query.limit));
+   .sort({ _id: 1 });
   res.status(200).json(greetings);
 });
 

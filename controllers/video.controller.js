@@ -2,14 +2,10 @@ const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
 const Video = require("../models/video");
 
-//@desc Get all videos
-//@route GET /api/videos
-//@access private
 const getVideos = asyncHandler(async (req, res) => {
   if(req.query.speakerId){
     const videos = await Video.find({ speakerId: new mongoose.Types.ObjectId(req.query.speakerId) })
-      .skip(parseInt(req.query.start))
-      .limit(parseInt(req.query.limit));
+     .sort({ _id: 1 });
     if(!videos){
       res.status(404);
       throw new Error("Video not found");
@@ -17,15 +13,11 @@ const getVideos = asyncHandler(async (req, res) => {
     res.status(200).json(videos);
   }else{
     const videos = await Video.find()
-      .skip(parseInt(req.query.start))
-      .limit(parseInt(req.query.limit));
+     .sort({ _id: 1 });
     res.status(200).json(videos);
   }
 });
 
-//@desc Create New video
-//@route POST /api/videos
-//@access private
 const createVideo = asyncHandler(async (req, res) => {
   const { videoTitle, videoLink, summary, speakerId } = req.body;
   if (!videoTitle || !videoLink || !speakerId) {
@@ -48,9 +40,6 @@ const createVideo = asyncHandler(async (req, res) => {
   res.status(201).json(video);
 });
 
-//@desc Get video
-//@route GET /api/videos/:id
-//@access private
 const getVideo = asyncHandler(async (req, res) => {
   const video = await Video.findById(req.params.id);
   console.log(video, 'video')
