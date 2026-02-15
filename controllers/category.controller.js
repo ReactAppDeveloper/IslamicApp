@@ -3,8 +3,7 @@ const Category = require("../models/category");
 
 const getCategories = asyncHandler(async (req, res) => {
   const categories = await Category.find()
-    .skip(parseInt(req.query.start))
-    .limit(parseInt(req.query.limit));
+   .sort({ _id: 1 });
   res.status(200).json(categories);
 });
 

@@ -23,8 +23,7 @@ const getIslamicStoryAudios = asyncHandler(async (req, res) => {
 });
 const getIslamicStoryAudiobyStoryID = asyncHandler(async (req, res) => {
   const islstoryaudio = await StoriesAudios.find({ storyId: new mongoose.Types.ObjectId(req.query.storyId) })
-    .skip(parseInt(req.query.start))
-    .limit(parseInt(req.query.limit));
+   .sort({ _id: 1 });
   res.status(200).json(islstoryaudio);
 });
 

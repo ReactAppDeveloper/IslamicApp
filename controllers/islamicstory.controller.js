@@ -23,8 +23,7 @@ const getIslamicStory = asyncHandler(async (req, res) => {
 });
 const getIslamicStorybyStoryID = asyncHandler(async (req, res) => {
   const islstory = await IslamicStory.find({ storyId: new mongoose.Types.ObjectId(req.query.storyId) })
-    .skip(parseInt(req.query.start))
-    .limit(parseInt(req.query.limit));
+   .sort({ _id: 1 });
   res.status(200).json(islstory);
 });
 const getStoryVersesbyID = asyncHandler(async (req, res) => {

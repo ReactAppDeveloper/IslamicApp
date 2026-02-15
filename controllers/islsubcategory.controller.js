@@ -5,8 +5,7 @@ const cloudinary = require('cloudinary').v2;
 
 const getIslSubCategory = asyncHandler(async (req, res) => {
   const islsubcategory = await IslSubCategory.find({ categoryId: new mongoose.Types.ObjectId(req.query.categoryId) })
-    .skip(parseInt(req.query.start))
-    .limit(parseInt(req.query.limit));
+    .sort({ _id: 1 });
   res.status(200).json(islsubcategory);
 });
 

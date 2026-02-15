@@ -23,8 +23,7 @@ const getDuaverses = asyncHandler(async (req, res) => {
 });
 const getDuaVersesByCategoryID = asyncHandler(async (req, res) => {
   const duaversescategory = await Duaverse.find({ duacategoryId: new mongoose.Types.ObjectId(req.query.duacategoryId) })
-    .skip(parseInt(req.query.start))
-    .limit(parseInt(req.query.limit));
+    .sort({ _id: 1 });
   res.status(200).json(duaversescategory);
 });
 const getindDuasVerses = asyncHandler(async (req, res) => {
