@@ -14,6 +14,10 @@ const wallofrememberSchema = mongoose.Schema(
         type: String,
         required: [true, "Dob is required"],
       },
+      intro: {
+        type: String,
+        required: [true, "Intro is required"],
+      },
     },
     {
       timestamps: true,
