@@ -9,8 +9,10 @@ const getTranslatorAudio= asyncHandler(async (req, res) => {
 });
 
 const getTranslatorAudioByReciterID = asyncHandler(async (req, res) => {
-  const translatoraudio = await TranslatorAudio.find({ reciterid: new mongoose.Types.ObjectId(req.query.reciterid) })
-    .sort({ _id: 1 });
+  const translatoraudio = await TranslatorAudio.find({
+    reciterid: req.query.reciterid
+  }).sort({ _id: 1 });
+
   res.status(200).json(translatoraudio);
 });
 
