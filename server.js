@@ -77,6 +77,10 @@ app.use("/api/stripe", stripeRoutes);
 app.use("/api/didyouknow", require("./routes/didyouknow.routes"));
 app.use("/api/wallofremember", require("./routes/wallofremember.routes"));
 app.use("/api/ayahoftheday", require("./routes/ayahoftheday.routes"));
+app.use("/api/translator", require("./routes/translator.routes"));
+app.use("/api/translatoraudios", require("./routes/translatoraudio.routes"));
+app.use("/api/translatoraudiosreciterid", require("./routes/translatoraudiobyreciter.routes"));
+app.use("/api/translatoraudiosbyid", require("./routes/translatoraudiobyid.routes"));
 
 app.use("/uploads", express.static("uploads"));
 app.use(errorHandler);
