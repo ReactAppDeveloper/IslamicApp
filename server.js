@@ -76,6 +76,7 @@ app.use("/api/islamicstoryaudiosbystoryid", require("./routes/storyaudiobystoryi
 app.use("/api/stripe", stripeRoutes);
 app.use("/api/didyouknow", require("./routes/didyouknow.routes"));
 app.use("/api/wallofremember", require("./routes/wallofremember.routes"));
+app.use("/api/wallofrememberbyid", require("./routes/wallofrememberbyid.routes"));
 app.use("/api/ayahoftheday", require("./routes/ayahoftheday.routes"));
 app.use("/api/translator", require("./routes/translator.routes"));
 app.use("/api/translatoraudios", require("./routes/translatoraudio.routes"));
