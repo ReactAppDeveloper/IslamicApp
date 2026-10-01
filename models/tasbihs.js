@@ -6,9 +6,10 @@ const tasbihsSchema = mongoose.Schema(
         type: String,
         required: [true],
       },
-      tasbihID:{
-        type:String
-      }
+       path: {
+        type: String,
+        required: [true],
+      },
     },
     {
       timestamps: true,
