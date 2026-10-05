@@ -1,12 +1,11 @@
 const express = require("express");
 const connectDb = require("./config/dbConnection");
-const fileUpload = require("express-fileupload");
 const cors = require("cors");
 const errorHandler = require("./middleware/errorHandler");
 const cloudinaryConfig = require("./config/cloudinaryConfig");
 const dotenv = require("dotenv").config();
 const stripeRoutes = require("./routes/stripe.routes");
-const bodyParser = require("body-parser");
+
 
 connectDb();
 cloudinaryConfig();
@@ -14,13 +13,17 @@ cloudinaryConfig();
 const app = express();
 const port = process.env.PORT || 5001;
 app.use(cors());
-app.use(fileUpload({ createParentPath: true }));
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
   require("./controllers/stripeController").webhook
 );
 app.use(express.json());
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
 app.use("/api/surahs", require("./routes/surah.routes"));
 app.use("/api/juzs", require("./routes/juz.routes"));
@@ -82,6 +85,7 @@ app.use("/api/translator", require("./routes/translator.routes"));
 app.use("/api/translatoraudios", require("./routes/translatoraudio.routes"));
 app.use("/api/translatoraudiosreciterid", require("./routes/translatoraudiobyreciter.routes"));
 app.use("/api/translatoraudiosbyid", require("./routes/translatoraudiobyid.routes"));
+app.use("/api/remembrance", require("./routes/remembrance.routes"));
 
 app.use("/uploads", express.static("uploads"));
 app.use(errorHandler);
