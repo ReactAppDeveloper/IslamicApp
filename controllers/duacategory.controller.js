@@ -12,9 +12,9 @@ const getindDuaCategoires = asyncHandler(async (req, res) => {
   res.status(200).json(duacategories);
 });
 const CreateDuaCategoires= asyncHandler(async (req, res) => {
-  const {title,image} = req.body;
+  const {title,image,imagegreen} = req.body;
   const dua = await DuaCategories.create({
-    title,image
+    title,image,imagegreen
   });
   res.status(200).json(dua);
 });

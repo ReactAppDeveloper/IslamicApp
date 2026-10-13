@@ -10,6 +10,10 @@ const duaCategoriesSchema = mongoose.Schema(
         type: String,
         required: [true],
       },
+       imagegreen: {
+        type: String,
+        required: [true],
+      },
       
     },
     {
